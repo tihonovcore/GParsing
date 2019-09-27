@@ -6,7 +6,7 @@ val FOLLOW = mutableMapOf<Char, MutableSet<Char>>()
 @Early
 fun buildFollow(grammar: Grammar): Map<Char, Set<Char>> {
     grammar.nonterminals.forEach { FOLLOW[it] = mutableSetOf() }
-    FOLLOW[grammar.nonterminals[0]]!! += '$'
+    FOLLOW[grammar.nonterminals[0]]!! += '$' //TODO: find another way
 
     var changed: Boolean
     do {

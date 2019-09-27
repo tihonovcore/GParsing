@@ -2,9 +2,8 @@
  * Build new Grammar from <code>grammar</code> without non-generative
  * and unreachable nonterminals, remove useless rules
  */
-@Early
-fun removeUselessNonterminals(grammar: Grammar): Grammar {
-    return grammar
+fun Grammar.removeUselessNonterminals(): Grammar {
+    return this
         .removeRulesFromNonGeneratingNonterminals()
         .removeRulesFromUnreachableNonterminals()
         .removeUnusedTerminalsAndNonterminals()
@@ -14,11 +13,10 @@ fun removeUselessNonterminals(grammar: Grammar): Grammar {
  * Find generating nonterminals, build new Grammar from <code>grammar</code>
  * without rules from these nonterminals
  */
-@Early
 internal fun Grammar.removeRulesFromNonGeneratingNonterminals(): Grammar {
     val generating = mutableSetOf<Char>()
 
-    fun Rule.leftIsGenerating(): Boolean {
+    fun Rule.fromGenerating(): Boolean {
         return this.right.all { it in generating || it in terminals }
     }
 
@@ -28,51 +26,46 @@ internal fun Grammar.removeRulesFromNonGeneratingNonterminals(): Grammar {
         for (rule in rules) {
             if (rule.left in generating) continue
 
-            if (rule.leftIsGenerating()) {
+            if (rule.fromGenerating()) {
                 generating += rule.left
                 changed = true
             }
         }
     } while (changed)
 
-    return filterRules { it.leftIsGenerating() }
+    return filterRules { it.fromGenerating() }
 }
 
 @Early
 internal fun Grammar.removeRulesFromUnreachableNonterminals(): Grammar {
-    val reachable = MutableList(nonterminals.size) { false }
-    findReachableTerms(this, reachable)
-    return filterRules { reachable[nonterminals.indexOf(it.left)] }
+    val reachable = mutableMapOf<Char, Boolean>()
+    nonterminals.forEach { reachable[it] = false }
+    findReachableNodes(this, reachable)
+    return filterRules { reachable[it.left]!! }
 }
 
-@Early
 internal fun Grammar.filterRules(body: (Rule) -> Boolean): Grammar {
     return copy(rules = rules.filter(body))
 }
 
 @Early
-internal fun findReachableTerms(
+internal fun findReachableNodes(
     grammar: Grammar,
-    visited: MutableList<Boolean>,
-    current: Int = 0
+    visited: MutableMap<Char, Boolean>,
+    current: Char = visited.keys.first()
 ) {
-    if (visited[current]) return
-
-    fun Rule.fromCurrentNonterminal(): Boolean {
-        return left == grammar.nonterminals[current]
-    }
+    if (visited[current]!!) return
 
     visited[current] = true
     for (rule in grammar.rules) {
-        if (rule.fromCurrentNonterminal()) {
+        if (rule.left == current) {
             rule.right.filter { it in grammar.nonterminals }.forEach {
-                findReachableTerms(grammar, visited, grammar.nonterminals.indexOf(it))
+                findReachableNodes(grammar, visited, it)
             }
         }
     }
 }
 
-@Early
 internal fun Grammar.removeUnusedTerminalsAndNonterminals(): Grammar {
     fun List<Char>.findUsable() = this.filter {
         rules.any { r -> r.left == it || r.right.contains(it) }
