@@ -29,3 +29,16 @@ fun buildFirst(grammar: Grammar): Map<Char, Set<Char>> {
 
     return FIRST
 }
+
+@Experimental
+fun buildFirstWithWrapper(grammar: Grammar): Map<Char, Set<Char>> {
+    val firstWrapper = FirstFollowWrapper(grammar.nonterminals)
+
+    do {
+        grammar.rules.forEach { rule ->
+            firstWrapper[rule.left] += getFirst(rule.right, grammar).toSet()
+        }
+    } while (firstWrapper.changed())
+
+    return firstWrapper.getMap()
+}

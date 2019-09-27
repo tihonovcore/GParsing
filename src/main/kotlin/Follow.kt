@@ -26,3 +26,23 @@ fun buildFollow(grammar: Grammar): Map<Char, Set<Char>> {
 
     return FOLLOW
 }
+
+@Experimental
+fun buildFollowWithWrapper(grammar: Grammar): Map<Char, Set<Char>> {
+    val followWrapper = FirstFollowWrapper(grammar.nonterminals)
+    followWrapper[grammar.nonterminals[0]] += '$'
+
+    do {
+        for (rule in grammar.rules) {
+            rule.right.forEachIndexed { index, a ->
+                if (a in grammar.nonterminals) {
+                    val gamma = getFirst(rule.right.drop(index + 1), grammar)
+                    followWrapper[a] += (gamma - '_').toSet()
+                    if ('_' in gamma) followWrapper[a] += followWrapper[rule.left]
+                }
+            }
+        }
+    } while (followWrapper.changed())
+
+    return followWrapper.getMap()
+}
