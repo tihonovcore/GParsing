@@ -1,5 +1,5 @@
 //TODO: make private (uses in checkLL1)
-//TODO: solve problem with !! by wrapper for FOLLOW
+//TODO: solve problem with !! by wrapper for getFOLLOW
 //TODO: add changed() to wrapper
 val FOLLOW = mutableMapOf<Char, MutableSet<Char>>()
 

@@ -1,5 +1,5 @@
 //TODO: make private (uses in checkLL1)
-//TODO: solve problem with !! by wrapper for FIRST
+//TODO: solve problem with !! by wrapper for getFIRST
 //TODO: add changed() to wrapper
 val FIRST = mutableMapOf<Char, MutableSet<Char>>()
 

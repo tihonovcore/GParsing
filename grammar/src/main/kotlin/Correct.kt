@@ -23,5 +23,12 @@ fun Grammar.removeLeftRecursion(): Grammar {
         }
     }
 
+    //HACK: if right == "_", then right + newNonterminal == "_q", but expected "q"
+    for (i in updatedRules.indices) {
+        if (updatedRules[i].right.dropLast(1).contains('_')) {
+            updatedRules[i] = Rule(updatedRules[i].left, updatedRules[i].right.replace("_", ""))
+        }
+    }
+
     return this.copy(nonterminals = nonterminals + newNonterminals, rules = updatedRules)
 }

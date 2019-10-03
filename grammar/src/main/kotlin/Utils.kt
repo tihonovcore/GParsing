@@ -22,7 +22,9 @@ fun checkLL1(grammar: Grammar): Boolean { //TODO: return more info
         val firstA = getFirst(a.right, grammar)
         val firstB = getFirst(b.right, grammar)
 
-        if (firstA.cross(firstB)) return@checkLL1 false
+        if (firstA.cross(firstB)) {
+            return@checkLL1 false
+        }
 
         if ('_' in firstA && firstB.cross(FOLLOW[a.left]!!.toList())) {
             return@checkLL1 false
