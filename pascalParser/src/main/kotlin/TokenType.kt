@@ -1,0 +1,4 @@
+@Early
+enum class TokenType {
+    FUNCTION, PROCEDURE, LBRACKET, RBRACKET, COLON, COMMA, STRING, EOF
+}

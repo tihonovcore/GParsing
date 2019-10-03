@@ -1,2 +1,4 @@
 rootProject.name = 'GParser'
 
+include 'grammar'
+include 'pascalParser'
