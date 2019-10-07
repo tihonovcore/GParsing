@@ -1,3 +1,7 @@
+package org.tihonovcore.pascal
+
+import org.tihonovcore.utils.Early
+
 import java.lang.IllegalArgumentException
 import java.lang.StringBuilder
 
@@ -49,21 +53,6 @@ class Lexer {
         }
 
         return tokens + Token(TokenType.EOF)
-    }
-}
-
-@Early
-fun main() {
-    val lines = listOf(
-        "function f(a: Integer): Integer",
-        "function asdff23456(a: Integer, b: Type): String",
-        "procedure as1234567dff23456(z2: Type)",
-        "procedure 2nameStartWithNumber(z2: Type)"
-
-    )
-
-    for (string in lines) {
-        println(Lexer().getTokens(string).render())
     }
 }
 

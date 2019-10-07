@@ -1,0 +1,41 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.3.50'
+}
+
+group 'GP'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation 'junit:junit:4.10'
+
+    compile project(":grammar")
+    compile project(":pascalParser")
+    compile project(":utils") //annotations need here((
+}
+
+compileKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+    kotlinOptions.jvmTarget = "1.8"
+}
+
+task RunGrammarCheck(type: JavaExec) {
+    main = "RunGrammarCheckKt"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task RunLexAnalysis(type: JavaExec) {
+    main = "RunLexAnalysisKt"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task RunLL1Checker(type: JavaExec) {
+    main = "RunLL1CheckerKt"
+    classpath = sourceSets.main.runtimeClasspath
+}

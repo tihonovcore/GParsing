@@ -1,3 +1,5 @@
+package org.tihonovcore.grammar
+
 fun readGrammar(lines: List<String>): Grammar {
     require(lines.size > 2)
     require(lines.drop(2).all { it.contains("->") }) //TODO: check rule format better
@@ -34,6 +36,7 @@ fun checkLL1(grammar: Grammar): Boolean { //TODO: return more info
     return true
 }
 
+//TODO: move to module utils?
 inline fun List<Rule>.forEachPair(body: (a: Rule, b: Rule) -> Unit) {
     for (i in indices) {
         for (j in indices) {
@@ -42,6 +45,7 @@ inline fun List<Rule>.forEachPair(body: (a: Rule, b: Rule) -> Unit) {
     }
 }
 
+//TODO: move to module utils?
 private fun List<Char>.cross(other: List<Char>): Boolean {
     return this.any { it in other }
 }

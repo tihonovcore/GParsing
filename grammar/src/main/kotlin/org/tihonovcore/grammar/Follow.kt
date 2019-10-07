@@ -1,3 +1,8 @@
+package org.tihonovcore.grammar
+
+import org.tihonovcore.utils.Early
+import org.tihonovcore.utils.Experimental
+
 //TODO: make private (uses in checkLL1)
 //TODO: solve problem with !! by wrapper for getFOLLOW
 //TODO: add changed() to wrapper

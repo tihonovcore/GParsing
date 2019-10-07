@@ -1,3 +1,7 @@
+package org.tihonovcore.grammar
+
+import org.tihonovcore.utils.Early
+
 /**
  * Build new Grammar from <code>grammar</code> without non-generative
  * and unreachable nonterminals, remove useless rules

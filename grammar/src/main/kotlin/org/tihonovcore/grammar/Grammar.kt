@@ -1,3 +1,5 @@
+package org.tihonovcore.grammar
+
 data class Grammar(
     val nonterminals: List<Char>,
     val terminals: List<Char>,

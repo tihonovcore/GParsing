@@ -1,3 +1,7 @@
+package org.tihonovcore.grammar
+
+import org.tihonovcore.utils.Experimental
+
 @Experimental
 class FirstFollowWrapper(nonterminals: List<Char>) {
     private val map = mutableMapOf<Char, MutableSet<Char>>()

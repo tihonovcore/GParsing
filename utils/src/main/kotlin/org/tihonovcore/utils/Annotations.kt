@@ -1,3 +1,5 @@
+package org.tihonovcore.utils
+
 /**
  * Annotate new code
  */

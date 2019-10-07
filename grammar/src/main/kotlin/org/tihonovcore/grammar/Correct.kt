@@ -1,3 +1,7 @@
+package org.tihonovcore.grammar
+
+import org.tihonovcore.utils.Early
+
 @Early //TODO: remove only direct recursion
 fun Grammar.removeLeftRecursion(): Grammar {
     val updatedRules = mutableListOf<Rule>()

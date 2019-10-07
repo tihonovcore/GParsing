@@ -1,3 +1,7 @@
+package org.tihonovcore.pascal
+
+import org.tihonovcore.utils.Early
+
 @Early
 data class Token(
     val type: TokenType,
