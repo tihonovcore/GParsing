@@ -1,15 +1,7 @@
 package org.tihonovcore.grammar
 
-import org.tihonovcore.utils.Early
-import org.tihonovcore.utils.Experimental
-
-//TODO: make private (uses in checkLL1)
-//TODO: solve problem with !! by wrapper for getFOLLOW
-//TODO: add changed() to wrapper
-val FOLLOW = mutableMapOf<Char, MutableSet<Char>>()
-
-@Early
-fun buildFollow(grammar: Grammar): Map<Char, Set<Char>> {
+fun buildFollow(grammar: Grammar): MutableMap<Char, MutableSet<Char>> {
+    val FOLLOW = mutableMapOf<Char, MutableSet<Char>>()
     grammar.nonterminals.forEach { FOLLOW[it] = mutableSetOf() }
     FOLLOW[grammar.nonterminals[0]]!! += '$' //TODO: find another way
 
@@ -20,7 +12,7 @@ fun buildFollow(grammar: Grammar): Map<Char, Set<Char>> {
             rule.right.forEachIndexed { index, a ->
                 if (a in grammar.nonterminals) {
                     val size = FOLLOW[a]!!.size
-                    val gamma = getFirst(rule.right.drop(index + 1), grammar)
+                    val gamma = getFirst(grammar.first, rule.right.drop(index + 1), grammar)
                     FOLLOW[a]!! += (gamma - '_').toList()
                     if ('_' in gamma) FOLLOW[a]!! += FOLLOW[rule.left]!!
                     changed = changed || (size != FOLLOW[a]!!.size)
@@ -30,24 +22,4 @@ fun buildFollow(grammar: Grammar): Map<Char, Set<Char>> {
     } while (changed)
 
     return FOLLOW
-}
-
-@Experimental
-fun buildFollowWithWrapper(grammar: Grammar): Map<Char, Set<Char>> {
-    val followWrapper = FirstFollowWrapper(grammar.nonterminals)
-    followWrapper[grammar.nonterminals[0]] += '$'
-
-    do {
-        for (rule in grammar.rules) {
-            rule.right.forEachIndexed { index, a ->
-                if (a in grammar.nonterminals) {
-                    val gamma = getFirst(rule.right.drop(index + 1), grammar)
-                    followWrapper[a] += (gamma - '_').toSet()
-                    if ('_' in gamma) followWrapper[a] += followWrapper[rule.left]
-                }
-            }
-        }
-    } while (followWrapper.changed())
-
-    return followWrapper.getMap()
 }

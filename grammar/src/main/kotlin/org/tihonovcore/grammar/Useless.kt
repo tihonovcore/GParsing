@@ -1,7 +1,5 @@
 package org.tihonovcore.grammar
 
-import org.tihonovcore.utils.Early
-
 /**
  * Build new Grammar from <code>grammar</code> without non-generative
  * and unreachable nonterminals, remove useless rules
@@ -40,11 +38,12 @@ internal fun Grammar.removeRulesFromNonGeneratingNonterminals(): Grammar {
     return filterRules { it.fromGenerating() }
 }
 
-@Early
 internal fun Grammar.removeRulesFromUnreachableNonterminals(): Grammar {
     val reachable = mutableMapOf<Char, Boolean>()
     nonterminals.forEach { reachable[it] = false }
+
     findReachableNodes(this, reachable)
+
     return filterRules { reachable[it.left]!! }
 }
 
@@ -52,7 +51,6 @@ internal fun Grammar.filterRules(body: (Rule) -> Boolean): Grammar {
     return copy(rules = rules.filter(body))
 }
 
-@Early
 internal fun findReachableNodes(
     grammar: Grammar,
     visited: MutableMap<Char, Boolean>,
@@ -61,6 +59,7 @@ internal fun findReachableNodes(
     if (visited[current]!!) return
 
     visited[current] = true
+
     for (rule in grammar.rules) {
         if (rule.left == current) {
             rule.right.filter { it in grammar.nonterminals }.forEach {

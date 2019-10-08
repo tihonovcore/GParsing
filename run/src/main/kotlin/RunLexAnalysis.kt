@@ -1,8 +1,6 @@
 import org.tihonovcore.pascal.Lexer
 import org.tihonovcore.pascal.render
-import org.tihonovcore.utils.Early
 
-@Early
 fun main() {
     val lines = listOf(
         "function f(a: Integer): Integer",

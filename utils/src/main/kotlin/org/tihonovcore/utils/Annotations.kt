@@ -5,7 +5,8 @@ package org.tihonovcore.utils
  */
 @Target(
     AnnotationTarget.CLASS,
-    AnnotationTarget.FUNCTION
+    AnnotationTarget.FUNCTION,
+    AnnotationTarget.FIELD
 )
 @Retention(AnnotationRetention.BINARY)
 annotation class Early

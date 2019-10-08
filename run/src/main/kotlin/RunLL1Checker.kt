@@ -2,7 +2,7 @@ import org.tihonovcore.grammar.*
 import java.io.File
 
 fun main() {
-    val path = "/home/tihonovcore/work/GParser/grammar/src/main/resources/naiveExpr"
+    val path = "src/main/resources/naiveExpr"
     val lines = File(path).readLines()
     val userGrammar = readGrammar(lines)
 

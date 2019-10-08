@@ -40,5 +40,9 @@ fun main() {
     buildFirst(x).also { println(it) }
     buildFollow(x).also { println(it) }
 
-    println("IS LL(1): " + checkLL1(x))
+    val checkLL1Result = detailCheckLL1(x)
+    println("IS LL(1): " + checkLL1Result.isLL1)
+    if (!checkLL1Result.isLL1) {
+        println(checkLL1Result.description)
+    }
 }
