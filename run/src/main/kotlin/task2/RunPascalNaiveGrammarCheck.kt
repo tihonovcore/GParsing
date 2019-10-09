@@ -1,13 +1,15 @@
+package task2
+
 import org.tihonovcore.grammar.*
 import org.tihonovcore.utils.Early
 
 /**
- * F file
- * D declaration
+ * Q file
+ * F function
+ * P procedure
  * N name
  * A arguments
  * T type
- * P suffix of arguments (,T)*
  *
  * 0 function
  * 1 procedure
@@ -19,21 +21,23 @@ import org.tihonovcore.utils.Early
  */
 @Early
 fun main() {
+
     val x = Grammar(
-        "FDNATP".toList(),
+        "QFPSNAT".toList(),
         "01():,*_".toList(),
         listOf(
-            Rule('F', "D"),
-            Rule('D', "0N(A):T"),
-            Rule('D', "1N(A)"),
+            Rule('Q', "F"),
+            Rule('Q', "P"),
+            Rule('F', "0S:T"),
+            Rule('P', "1S"),
+            Rule('S', "N(A)"),
             Rule('N', "*"),
             Rule('T', "*"),
             Rule('A', "_"),
-            Rule('A', "N:TP"),
-            Rule('P', ",N:TP"),
-            Rule('P', "_")
+            Rule('A', "N:T"),
+            Rule('A', "N:T,A")
         )
-    ).removeUselessNonterminals().removeLeftRecursion()
+    ).removeUselessNonterminals().removeLeftRecursion().unsafeRemoveRightBranching()
 
     println(x)
 

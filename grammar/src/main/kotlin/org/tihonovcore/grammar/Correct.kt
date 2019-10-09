@@ -36,3 +36,43 @@ fun Grammar.removeLeftRecursion(): Grammar {
 
     return this.copy(nonterminals = nonterminals + newNonterminals, rules = updatedRules)
 }
+
+@Early
+fun Grammar.unsafeRemoveRightBranching(): Grammar {
+    val newNonterminals = mutableListOf<Char>()
+    val newRules = mutableListOf<Rule>()
+    val removedRules = mutableListOf<Rule>()
+
+    val possibleNonterminals = (mutableSetOf<Char>() + ('A'..'Z') - nonterminals).toMutableSet()
+
+    rules.forEachPair { a, b ->
+        if (a.left == b.left) {
+            val lcp = findLcp(a.right, b.right)
+            println("a: ${a.right} b: ${b.right} lcp: $lcp")
+
+            if (lcp != 0) {
+                val newNT = possibleNonterminals.random()
+                possibleNonterminals.remove(newNT)
+
+                newNonterminals += newNT
+                newRules += Rule(a.left, a.right.substring(0, lcp) + newNT)
+                newRules += Rule(newNT, a.right.drop(lcp)) //TODO: string after drop may be empty (expected '_')
+                newRules += Rule(newNT, b.right.drop(lcp)) //TODO: string after drop may be empty (expected '_')
+
+                removedRules += a
+                removedRules += b
+            }
+        }
+    }
+
+    return Grammar(nonterminals + newNonterminals, terminals, newRules + rules - removedRules)
+}
+
+private fun findLcp(a: String, b: String): Int {
+    var prefixLength = 0
+    while (prefixLength < a.length && prefixLength < b.length) {
+        if (a[prefixLength] != b[prefixLength]) break
+        prefixLength++
+    }
+    return prefixLength
+}

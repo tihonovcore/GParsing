@@ -55,7 +55,7 @@ fun checkLL1(grammar: Grammar): Boolean {
     return detailCheckLL1(grammar).isLL1
 }
 
-private inline fun List<Rule>.forEachPair(body: (a: Rule, b: Rule) -> Unit) {
+internal inline fun List<Rule>.forEachPair(body: (a: Rule, b: Rule) -> Unit) {
     for (i in indices) {
         for (j in indices) {
             if (i < j) body(this[i], this[j])

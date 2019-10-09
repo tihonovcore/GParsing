@@ -26,7 +26,12 @@ compileTestKotlin {
 }
 
 task RunPascalGrammarCheck(type: JavaExec) {
-    main = "RunPascalGrammarCheckKt"
+    main = "task2.RunPascalGrammarCheckKt"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task RunPascalNaiveGrammarCheck(type: JavaExec) {
+    main = "task2.RunPascalNaiveGrammarCheckKt"
     classpath = sourceSets.main.runtimeClasspath
 }
 

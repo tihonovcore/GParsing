@@ -1,4 +1,6 @@
 import org.tihonovcore.pascal.Lexer
+import org.tihonovcore.pascal.PascalParser
+import org.tihonovcore.pascal.RenderVisitor
 import org.tihonovcore.pascal.render
 
 fun main() {
@@ -11,6 +13,12 @@ fun main() {
     )
 
     for (string in lines) {
-        println(Lexer().getTokens(string).render())
+        val tokens = Lexer().getTokens(string)
+        val parseResult = PascalParser(tokens).parse()
+        println(string)
+        println()
+        println(tokens.render())
+        println()
+        println(RenderVisitor(parseResult).visit())
     }
 }
