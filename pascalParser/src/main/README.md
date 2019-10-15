@@ -56,7 +56,7 @@
 <code>FOLLOW = { Q=[$], F=[$], P=[$], S=[:, $], N=[(, :], A=[)], T=[$, ,, )], D=[,, )], Z=[)] }</code>
 
 ## Решение
-[Лексический анализатор](https://github.com/tihonovcore/GParser/pascalParser/src/main/kotlin/org/tihonovcore/pascal/Lexer.kt) <br>
-[Синтаксический анализатор](https://github.com/tihonovcore/GParser/pascalParser/src/main/kotlin/org/tihonovcore/pascal/PascalParser.kt) <br>
-[Визуализатор дерева разбора](https://github.com/tihonovcore/GParser/pascalParser/src/main/kotlin/org/tihonovcore/pascal/RenderVisitor.kt) <br>
-[Тесты](https://github.com/tihonovcore/GParser/pascalParser/src/test/kotlin/TestParser.kt) <br>
+[Лексический анализатор](https://github.com/tihonovcore/GParsing/blob/master/pascalParser/src/main/kotlin/org/tihonovcore/pascal/Lexer.kt) <br>
+[Синтаксический анализатор](https://github.com/tihonovcore/GParser/blob/master/pascalParser/src/main/kotlin/org/tihonovcore/pascal/PascalParser.kt) <br>
+[Визуализатор дерева разбора](https://github.com/tihonovcore/GParser/blob/master/pascalParser/src/main/kotlin/org/tihonovcore/pascal/RenderVisitor.kt) <br>
+[Тесты](https://github.com/tihonovcore/GParser/blob/master/pascalParser/src/test/kotlin/TestParser.kt) <br>
