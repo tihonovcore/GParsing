@@ -20,4 +20,4 @@ and unreachable nonterminals, remove useless rules <br>
 
 
 #### Parser for function definition in Pascal
-@Early [org.tihonovcore.pascal](https://github.com/tihonovcore/GParser/pascalParser/src/main/kotlin/org/tihonovcore/pascal)<br>
+@Early [org.tihonovcore.pascal](https://github.com/tihonovcore/GParsing/tree/master/pascalParser/src/main)<br>
