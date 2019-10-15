@@ -14,7 +14,7 @@ class RenderVisitor(private val node: Node) {
 
     private fun visit(node: Node) {
         indentRender()
-        render(node.type)
+        render(node.description)
         render(System.lineSeparator())
         upIndent()
         node.children.forEach { visit(it) }

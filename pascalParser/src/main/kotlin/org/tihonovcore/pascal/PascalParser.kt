@@ -1,19 +1,18 @@
 package org.tihonovcore.pascal
 
+import org.tihonovcore.pascal.TokenType.*
 import org.tihonovcore.utils.Early
-import java.lang.IllegalArgumentException
 
-@Early
-data class Node(val type: String, val children: List<Node> = emptyList())
+data class Node(val description: String, val children: List<Node> = emptyList())
 
 @Early
 class PascalParser(private val tokens: List<Token>) {
-    var current = 0
+    private var current = 0
 
     private fun get(): Token = tokens[current]
     private fun getType(): TokenType = tokens[current].type
     private fun shift() { current++ }
-    private fun expected(type: TokenType) { assert(getType() == type) }
+    private fun expected(type: TokenType) { require(getType() == type) { "expected: $type, but was ${get()}" } }
 
     fun parse(): Node {
         return parseFile()
@@ -21,50 +20,50 @@ class PascalParser(private val tokens: List<Token>) {
 
     private fun parseFile(): Node {
         return when (getType()) {
-            TokenType.FUNCTION -> parseFunction()
-            TokenType.PROCEDURE -> parseProcedure()
-            else -> throw IllegalArgumentException("Unexpected token")
+            FUNCTION -> parseFunction()
+            PROCEDURE -> parseProcedure()
+            else -> throw IllegalStateException("Expected 'function' or 'procedure', but was ${get()}")
         }
     }
 
     private fun parseFunction(): Node {
-        expected(TokenType.FUNCTION)
+        expected(FUNCTION)
         shift()
 
         val signature = parseSignature()
-        expected(TokenType.COLON)
+        expected(COLON)
         shift()
 
         val type = parseType()
-        expected(TokenType.EOF)
+        expected(EOF)
 
         return Node("FUNCTION", listOf(signature, type))
     }
 
     private fun parseProcedure(): Node {
-        expected(TokenType.PROCEDURE)
+        expected(PROCEDURE)
         shift()
 
         val signature = parseSignature()
-        expected(TokenType.EOF)
+        expected(EOF)
 
         return Node("PROCEDURE", listOf(signature))
     }
 
     private fun parseSignature(): Node {
         val name = parseName()
-        expected(TokenType.LBRACKET)
+        expected(LBRACKET)
         shift()
 
         val arguments = parseArguments()
-        expected(TokenType.RBRACKET)
+        expected(RBRACKET)
         shift()
 
         return Node("SIGNATURE", listOf(name, arguments))
     }
 
     private fun parseName(): Node {
-        expected(TokenType.STRING)
+        expected(STRING)
 
         val name = get().data as String
         shift()
@@ -73,7 +72,7 @@ class PascalParser(private val tokens: List<Token>) {
     }
 
     private fun parseType(): Node {
-        expected(TokenType.STRING)
+        expected(STRING)
 
         val name = get().data as String
         shift()
@@ -83,22 +82,22 @@ class PascalParser(private val tokens: List<Token>) {
 
     private fun parseArguments(): Node {
         return when (getType()) {
-            TokenType.STRING -> {
+            STRING -> {
                 val declaration = parseDeclaration()
                 val argumentsSuffix = parseArgumentsSuffix()
 
                 Node("AT LEAST 1 ARGUMENT", listOf(declaration, argumentsSuffix))
             }
-            TokenType.RBRACKET -> {
-                Node("0 ARGUMENT")
+            RBRACKET -> {
+                Node("ZERO ARGUMENTS")
             }
-            else -> throw IllegalArgumentException("Unexpected token")
+            else -> throw IllegalStateException("Expected ')' or name of argument, but was ${get()}")
         }
     }
 
     private fun parseDeclaration(): Node {
         val name = parseName()
-        expected(TokenType.COLON)
+        expected(COLON)
         shift()
 
         val type = parseType()
@@ -108,11 +107,11 @@ class PascalParser(private val tokens: List<Token>) {
 
     private fun parseArgumentsSuffix(): Node {
         return when (getType()) {
-            TokenType.RBRACKET -> {
+            RBRACKET -> {
                 Node("EMPTY SUFFIX")
             }
-            TokenType.COMMA -> {
-                expected(TokenType.COMMA)
+            COMMA -> {
+                expected(COMMA)
                 shift()
 
                 val declaration = parseDeclaration()
@@ -120,7 +119,7 @@ class PascalParser(private val tokens: List<Token>) {
 
                 Node("ARGUMENT'S SUFFIX", listOf(declaration, suffix))
             }
-            else -> throw IllegalArgumentException("Unexpected token")
+            else -> throw IllegalStateException("Expected ')' or ',' and other arguments, but was ${get()}")
         }
     }
 }

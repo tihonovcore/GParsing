@@ -1,6 +1,7 @@
-# MT course homeworks
+## MT course homeworks
 
-## Utilities for grammars
+#### Utilities for grammars
+TODO move to grammar module
 
 <code>Grammar</code> class for Grammar<br>
 NOTE: Terminals and nonterminals are Chars.<br>
@@ -18,5 +19,5 @@ and unreachable nonterminals, remove useless rules <br>
 <code>isLL1: Boolean</code> and <code>description: String</code> with description of error<br>
 
 
-## Parser for function defenition in Pascal
-@Early [Lexer](https://github.com/tihonovcore/GParsing/blob/master/pascalParser/src/main/kotlin/Lexer.kt)<br>
+#### Parser for function definition in Pascal
+@Early [org.tihonovcore.pascal](https://github.com/tihonovcore/GParser/pascalParser/src/main/kotlin/org/tihonovcore/pascal)<br>

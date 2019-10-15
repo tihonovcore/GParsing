@@ -17,7 +17,7 @@ import org.tihonovcore.utils.Early
  * :
  * , arguments separator
  * * string (e.g. declaration name)
- * _ empty stirng (epsilon)
+ * _ empty string (epsilon)
  */
 @Early
 fun main() {
