@@ -118,25 +118,36 @@ class TestParser : TestCase() {
 
         @Test //NOTE: они работают(
         fun testBadExpression() {
-//            doTestWithException("1 ++ 2")
-//            doTestWithException("5 > /2")
-//            doTestWithException("1 != false")
-//            doTestWithException("3 || 4")
-//            doTestWithException("false + true")
-//            doTestWithException("false < true")
+//            doTestWithException("1 ++ 2") //second '+' is unary
+//            doTestWithException("5 > /2") //line 1:4 extraneous input '/' expecting {NUMBER, '+', '-', '('}
+            doTestWithAnyResult("1 != false", null)
+            doTestWithException("3 || 4")
+//            doTestWithAnyResult("false + true", null) //'+ true' dont parse
+//            doTestWithAnyResult("false < true", null) //'< true' dont parse
         }
     }
 }
 
 @Early
-private fun doTest(input: String, expectedResult: Any, expectedType: String?) {
+private fun doTest(input: String): ExprParser.GeneralContext {
     val lexer = ExprLexer(CharStreams.fromString(input))
     val tokens = CommonTokenStream(lexer)
     val parser = ExprParser(tokens)
-    val tree = parser.eval()
 
-    Assert.assertEquals("Expression is '$input'", expectedType, tree.general.type)
-    Assert.assertEquals("Expression is '$input'", expectedResult, tree.general.value)
+    return parser.general()
+}
+
+private fun doTest(input: String, expectedResult: Any, expectedType: String?) {
+    val tree = doTest(input)
+
+    Assert.assertEquals("Expression is '$input'", expectedType, tree.type)
+    Assert.assertEquals("Expression is '$input'", expectedResult, tree.value)
+}
+
+private fun doTestWithAnyResult(input: String, expectedType: String?) {
+    val tree = doTest(input)
+
+    Assert.assertEquals("Expression is '$input'", expectedType, tree.type)
 }
 
 @Early
