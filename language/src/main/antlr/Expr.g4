@@ -1,24 +1,112 @@
 grammar Expr;
 
 @header {
-//package org.expr;
-//TODO: add global context
-//int xxx() { return 100; }
+import java.util.*;
+}
+
+@members {
+static Map<String, String> ti = new HashMap<>();
+static {
+    ti.put("I+I", "I");
+    ti.put("I-I", "I");
+    ti.put("I*I", "I");
+    ti.put("I/I", "I");
+    ti.put("I%I", "I");
+    ti.put("I<I", "B");
+    ti.put("I<=I", "B");
+    ti.put("I>I", "B");
+    ti.put("I>=I", "B");
+    ti.put("I==I", "B");
+    ti.put("I!=I", "B");
+    ti.put("-I", "I");
+    ti.put("+I", "I");
+
+    ti.put("B&&B", "B");
+    ti.put("B||B", "B");
+    ti.put("!B", "B");
+    ti.put("B==B", "B");
+    ti.put("B!=B", "B");
+}
 }
 
 
-eval : general { System.out.println($general.value); };
+eval : general;
 
-general returns [Object value]: orExpr { $value = $orExpr.value; } (OR orExpr { $value = (Boolean) $value || $orExpr.value; })*;
-orExpr returns [boolean value]: andExpr { $value = $andExpr.value; } (AND andExpr { $value = $value && $andExpr.value; })*;
-andExpr returns [boolean value]: compExpr { $value = (Boolean) $compExpr.value; } (EQUALS compExpr { $value = ($value == ((Boolean) $compExpr.value)); } | NOTEQUALS compExpr { $value = ($value != ((Boolean) $compExpr.value)); })+| arithExpr (LESS_OR_EQUALS arithExpr1 { $value = $arithExpr.value <= $arithExpr1.value; } | GREATER_OR_EQUALS arithExpr1 { $value = $arithExpr.value >= $arithExpr1.value; } | LESS arithExpr1 { $value = $arithExpr.value < $arithExpr1.value; } | GREATER arithExpr1 { $value = $arithExpr.value > $arithExpr1.value; });
-compExpr returns [Object value]: NOT general { $value = !( (Boolean) $general.value); } | LBRACKET general RBRACKET { $value = $general.value; }| TRUE { $value = true; } | FALSE { $value = false; } | arithExpr { $value = $arithExpr.value; };
+general returns [Object value, String type] :
+    orExpr { $value = $orExpr.value; $type = $orExpr.type; } (OR orExpr { $value = (Boolean) $value || (Boolean) $orExpr.value; $type = ti.get($type + "||" + $orExpr.type); } )*
+    |
+    arithExpr { $value = $arithExpr.value; $type = $arithExpr.type; }
+    ;
 
-arithExpr1 returns [int value] : arithExpr { $value = $arithExpr.value; };
-arithExpr returns [int value] : expression { $value = $expression.value; };
-expression returns [int value] : term { $value = $term.value; } (PLUS term { $value += $term.value; } | MINUS term { $value -= $term.value; })*;
-term returns [int value] : factor { $value = $factor.value; } (STAR factor { $value *= $factor.value;} | SLASH factor { $value /= $factor.value; } | PERCENT factor { $value %= $factor.value; } )*;
-factor returns [int value] : NUMBER { $value = Integer.parseInt($NUMBER.getText()); } | LBRACKET expression RBRACKET { $value = $expression.value; } | PLUS NUMBER { $value = Integer.parseInt($NUMBER.getText()); } | MINUS NUMBER { $value = -Integer.parseInt($NUMBER.getText()); };
+orExpr returns [Object value, String type] :
+    andExpr { $value = $andExpr.value; $type = $andExpr.type; } (AND andExpr { $value = ((Boolean) $value) && ((Boolean) $andExpr.value); $type = ti.get($type + "||" + $andExpr.type); })*
+    ;
+
+andExpr returns [Object value, String type] :
+    compExpr { $value = $compExpr.value; $type = $compExpr.type; }
+        (
+            EQUALSEQUALS compExpr { $value = ($value == ($compExpr.value)); $type = ti.get($type + "==" + $compExpr.type); }
+            |
+            NOTEQUALS compExpr { $value = ($value != ($compExpr.value));  $type = ti.get($type + "!=" + $compExpr.type); }
+        )*
+    |
+    arithExpr { $type = $arithExpr.type; }
+        (
+            LESS_OR_EQUALS arithExpr1 { $value = $arithExpr.value <= $arithExpr1.value; $type = ti.get($type + "<=" + $arithExpr1.type); }
+            |
+            GREATER_OR_EQUALS arithExpr1 { $value = $arithExpr.value >= $arithExpr1.value; $type = ti.get($type + ">=" + $arithExpr1.type); }
+            |
+            LESS arithExpr1 { $value = $arithExpr.value < $arithExpr1.value; $type = ti.get($type + "<" + $arithExpr1.type); }
+            |
+            GREATER arithExpr1 { $value = $arithExpr.value > $arithExpr1.value; $type = ti.get($type + ">" + $arithExpr1.type); }
+        )
+    ;
+
+compExpr returns [Object value, String type] :
+    NOT general { $value = !((Boolean) $general.value); $type = ti.get("!" + $general.type); }
+    |
+    LBRACKET general RBRACKET { $value = $general.value; $type = $general.type; }
+    |
+    TRUE { $value = true; $type = "B"; }
+    |
+    FALSE { $value = false; $type = "B"; }
+    |
+    arithExpr { $value = $arithExpr.value; $type = $arithExpr.type; }
+    ;
+
+arithExpr1 returns [int value, String type] : arithExpr { $value = $arithExpr.value; $type = $arithExpr.type; };
+
+arithExpr returns [int value, String type] : expression { $value = $expression.value; $type = $expression.type; };
+
+expression returns [int value, String type] :
+    term { $value = $term.value; $type = $term.type; }
+        (
+            PLUS term { $value += $term.value; ti.get($type + "+" + $term.type); }
+            |
+            MINUS term { $value -= $term.value; ti.get($type + "-" + $term.type); }
+        )*
+    ;
+
+term returns [int value, String type] :
+    factor { $value = $factor.value; $type = $factor.type; }
+        (
+            STAR factor { $value *= $factor.value; $type = ti.get($type + "*" + $factor.type); }
+            |
+            SLASH factor { $value /= $factor.value; $type = ti.get($type + "/" + $factor.type); }
+            |
+            PERCENT factor { $value %= $factor.value; $type = ti.get($type + "%" + $factor.type); }
+        )*
+    ;
+
+factor returns [int value, String type] :
+    NUMBER { $value = Integer.parseInt($NUMBER.getText()); $type = "I"; }
+    |
+    LBRACKET expression RBRACKET { $value = $expression.value; $type = $expression.type; }
+    |
+    PLUS NUMBER { $value = Integer.parseInt($NUMBER.getText()); $type = "I"; }
+    |
+    MINUS NUMBER { $value = -Integer.parseInt($NUMBER.getText()); $type = "I"; }
+    ;
 
 NUMBER : [0-9]+;
 PLUS   : '+';
@@ -29,7 +117,7 @@ PERCENT    : '%';
 LBRACKET     : '(';
 RBRACKET     : ')';
 
-EQUALS : '==';
+EQUALSEQUALS : '==';
 NOTEQUALS : '!=';
 LESS_OR_EQUALS : '<=';
 GREATER_OR_EQUALS : '>=';
