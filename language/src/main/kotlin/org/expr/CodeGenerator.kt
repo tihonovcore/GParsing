@@ -68,22 +68,17 @@ class CodeGenerator(
     override fun visitRead(ctx: ExprParser.ReadContext?) {
         require(ctx != null)
 
+        visit(ctx.ID())
+        add(" = ")
         when (ExprParser.idToType[ctx.ID().text]) {
-            "I" -> {
-                add("scanf(\"%d\", &")
-                visit(ctx.ID())
-                addln(");")
-            }
-            "B" -> {
-                val name = ctx.ID().text + "_"
-                add("{ int $name; scanf(\"%d\", &$name); ")
-                visit(ctx.ID())
-                addln(" = $name; }")
-            }
+            "I" -> add("readInt()")
+            "B" -> add("readBool()")
         }
+        addln(";")
     }
 
     override fun visitReadWithType(ctx: ExprParser.ReadWithTypeContext?) {
+        require(ctx != null)
         super.visitReadWithType(ctx)
         add("()")
     }
@@ -160,9 +155,8 @@ class CodeGenerator(
 
         when (ctx.children[2].text) {
             "=" -> {
-                val value = ctx.children[3].text
                 add(" = ")
-                add(value)
+                visit(ctx.children[3])
                 addln(";")
             }
             ":" -> {

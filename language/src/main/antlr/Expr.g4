@@ -31,7 +31,9 @@ static {
 }
 }
 
-statement : { idToType.clear(); } ((declaration | assingmnet | print | println | read) SEMICOLON)+;
+statement : { idToType.clear(); } ((declaration | assingmnet | io) SEMICOLON)+;
+
+io : print | println | read;
 
 general returns [Object value, String type] :
     orExpr {
