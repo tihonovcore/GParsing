@@ -5,33 +5,34 @@
 `ww` - work in progress <br>
 `ns` - not started
 
-\[SOFT DEADLINE/HARD DEADLINE\]
+**\[SOFT DEADLINE/HARD DEADLINE\]**
 
 ## 01 Expressions \[16/20\] @EARLY
-* `ss` Expressions (Int, Bool)
-* `ss` Evaluation
-* `ss` Type inference
+* `ss` expressions (Int, Bool)
+* `ss` evaluation
+* `ss` yype inference
 
-## 02 Variables \[16/20\]
-* `NS` Variable declaration
-* `NS` Assignments
-* `NS` Codegen
+## 02 Variables & IO \[20/23\]
+* `ss` variable declaration
+* `ss` assignments
+* `ss` IO functions
+* `ss` codegen
+* `ss` compiler MPL
 
-## 03 IO & Conditions \[20/23\]
-* `NS` IO functions
-* `NS` if/else
-* `NS` while
+## 03 Types \[27/30\]
+* `ns` primitives (Long, Double, Char)
+* `ns` string
+* `ns` array
 
-## 04 Types \[23/27\]
-* `NS` Primitives (Long, Double, Char)
-* `NS` String
-* `NS` Array
-
-## 05 Functions \[3/3\]
-
-## 06 Classes \[3/3\]
+## 04 Conditions & loops & functions & classes \[3/6\]
+* `ns` if/else
+* `ns` while
+* `ns` repeat, for
+* `ns` functions
+* `ns` classes
 
 ## Other \[\*/*\]
 * String interpolation
 * map, filter, etc.
 * tuple
+* rm semicolon, use WS

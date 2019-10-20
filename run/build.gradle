@@ -16,6 +16,7 @@ dependencies {
     compile project(":grammar")
     compile project(":pascalParser")
     compile project(":utils")
+    compile project(":language")
 }
 
 compileKotlin {
@@ -42,5 +43,10 @@ task RunLexAnalysis(type: JavaExec) {
 
 task RunLL1Checker(type: JavaExec) {
     main = "RunLL1CheckerKt"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+task mypl(type: JavaExec) {
+    main = "task3.MPLCompileKt"
     classpath = sourceSets.main.runtimeClasspath
 }
