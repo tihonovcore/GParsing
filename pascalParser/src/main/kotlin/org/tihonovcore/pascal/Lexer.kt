@@ -12,9 +12,12 @@ class Lexer {
         var current = 0
 
         fun get() = string[current]
+
         fun shift(n: Int = 1) { current += n }
         fun shift(type: TokenType) { shift(tokenLength[type]!!) }
-        fun beginOf(value: String) = string.startsWith(value, current)
+
+        fun Char.isLatinLetter() = this in 'a'..'z' || this in 'A'..'Z'
+        fun Char.isDigitOrLatinLetter() = this.isDigit() || this.isLatinLetter()
 
         val tokens = mutableListOf<Token>()
         while (current < string.length) {
@@ -26,18 +29,20 @@ class Lexer {
                 ')' -> RBRACKET
                 ':' -> COLON
                 ',' -> COMMA
+                ';' -> SEMICOLON
                 else -> {
-                    when {
-                        beginOf("function") -> FUNCTION
-                        beginOf("procedure") -> PROCEDURE
-                        c.isLetter() -> {
-                            val start = current
-                            while (current < string.length && get().isLetterOrDigit()) shift()
-                            value = string.substring(start, current)
-                            STRING
+                    if (c.isLatinLetter()) {
+                        val start = current
+                        while (current < string.length && get().isDigitOrLatinLetter()) shift()
+                        value = string.substring(start, current)
+
+                        when (value) {
+                            "function" -> FUNCTION
+                            "procedure" -> PROCEDURE
+                            else -> STRING
                         }
-                        else -> throw IllegalStateException("Undefined symbol: $c at position $current")
                     }
+                    else throw IllegalStateException("Undefined symbol: $c at position $current")
                 }
             }
 
@@ -54,8 +59,9 @@ class Lexer {
         RBRACKET to 1,
         COLON to 1,
         COMMA to 1,
-        FUNCTION to 8,
-        PROCEDURE to 9,
+        SEMICOLON to 1,
+        FUNCTION to 0,
+        PROCEDURE to 0,
         STRING to 0
     )
 }

@@ -214,29 +214,43 @@ class TestParser : TestCase() {
 
             doTestVariables(code, expectedType, expectedResult)
         }
+
+        @Test
+        fun testSmth() {
+            val code = """
+                def printfdsf: Int;
+                printfdsf = 10;
+                print printfdsf;
+            """
+
+            val expectedType = listOf("printfdsf" to "I")
+            val expectedResult = "10\n"
+
+            doTestVariables(code, expectedType, expectedResult)
+        }
     }
-//
-//    class TestIO : TestCase() {
-//        @Test
-//        fun testIO1() {
-//            val code = """
-//                def x: Int;
-//                def y: Bool;
-//                read x;
-//                read y;
-//                print x > 2 == y;
-//
-//                def z = readInt;
-//                def q = readBool;
-//                print z * z == z || q;
-//            """
-//
-//            val expectedType = listOf<Pair<String, String>>()
-//            val expectedResult = "140\n"
-//
-//            doTestVariables(code, expectedType, expectedResult)
-//        }
-//    }
+
+    class TestIO : TestCase() {
+        @Test
+        fun testIO1() {
+            val code = """
+                def x: Int;
+                def y: Bool;
+                read x;
+                read y;
+                print x > 2 == y;
+
+                def z = readInt;
+                def q = readBool;
+                print z * z == z || q;
+            """
+
+            val expectedType = listOf<Pair<String, String>>()
+            val expectedResult = "140\n"
+
+            doTestVariables(code, expectedType, expectedResult)
+        }
+    }
 }
 
 @Early

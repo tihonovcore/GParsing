@@ -7,12 +7,15 @@ data class Node(val description: String, val children: List<Node> = emptyList())
 
 @Early
 class PascalParser(private val tokens: List<Token>) {
+    private var possibleTypes = setOf("integer", "string", "real", "char", "boolean")
     private var current = 0
 
     private fun get(): Token = tokens[current]
     private fun getType(): TokenType = tokens[current].type
     private fun shift() { current++ }
-    private fun expected(type: TokenType) { require(getType() == type) { "expected: $type, but was ${get()}" } }
+    private fun expected(type: TokenType) {
+        require(getType() == type) { "expected: $type, but was ${get()}" }
+    }
 
     fun parse(): Node {
         return parseFile()
@@ -23,7 +26,7 @@ class PascalParser(private val tokens: List<Token>) {
             FUNCTION -> parseFunction()
             PROCEDURE -> parseProcedure()
             else -> throw IllegalStateException("Expected 'function' or 'procedure', but was ${get()}")
-        }
+        }.also { expected(SEMICOLON) }
     }
 
     private fun parseFunction(): Node {
@@ -35,8 +38,6 @@ class PascalParser(private val tokens: List<Token>) {
         shift()
 
         val type = parseType()
-        expected(EOF)
-
         return Node("FUNCTION", listOf(signature, type))
     }
 
@@ -45,8 +46,6 @@ class PascalParser(private val tokens: List<Token>) {
         shift()
 
         val signature = parseSignature()
-        expected(EOF)
-
         return Node("PROCEDURE", listOf(signature))
     }
 
@@ -77,6 +76,7 @@ class PascalParser(private val tokens: List<Token>) {
         val name = get().data as String
         shift()
 
+        require(name in possibleTypes) { "Unexpected type: $name" }
         return Node("TYPE", listOf(Node(name)))
     }
 

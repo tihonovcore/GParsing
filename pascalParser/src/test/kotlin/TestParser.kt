@@ -4,68 +4,92 @@ import org.tihonovcore.utils.Early
 import org.junit.Test
 import junit.framework.TestCase
 
-
 @Early
 class TestParser : TestCase() {
 
     @Test
     fun testFunctionWithoutArguments() {
-        doTest("function f(): Integer")
+        doTest("function f(): integer;")
     }
 
     @Test
     fun testProcedureWithoutArguments() {
-        doTest("procedure f()")
+        doTest("procedure f();")
     }
 
     @Test
     fun testFunctionWithOneArgument() {
-        doTest("function f(a: Integer): Integer")
+        doTest("function f(a: real): string;")
     }
 
     @Test
     fun testFunctionWithTwoArgument() {
-        doTest("function nameOo(a: Integer, b: Type): String")
+        doTest("function nameOo(a: string, b: char): integer;")
     }
 
     @Test
     fun testFunctionWithThreeArgument() {
-        doTest("function nameOo(a: Integer, b: Type, third: Queue): String")
+        doTest("function nameOo(a: integer, b: real, third: real): string;")
     }
 
     @Test
     fun testFunctionWithoutReturnType() {
-        doTestWithException("function missedReturnType(a: Integer, b: Type)")
+        doTestWithException("function missedReturnType(a: char, b: real);")
     }
 
     @Test
     fun testProcedureWithReturnType() {
-        doTestWithException("procedure extraReturnType(a: Integer, b: Type): Integer")
+        doTestWithException("procedure extraReturnType(a: integer, b: char): string;")
     }
 
     @Test
     fun testProcedure() {
-        doTest("procedure as1234567dff23456(z2: Type)")
+        doTest("procedure as1234567dff23456(z2: real);")
     }
 
     @Test
     fun testNoColonBetweenNameAndType() {
-        doTestWithException("procedure missedCOLON(z2 Type)")
+        doTestWithException("procedure missedCOLON(z2 char);")
     }
 
     @Test
     fun testProblemWithCaseInKeyword() {
-        doTestWithException("pRoCeDure joke()")
+        doTestWithException("pRoCeDure joke();")
     }
 
     @Test
     fun testNameStartWithNumber() {
-        doTestWithException("procedure 2nameStartWithNumber(z2: Type)")
+        doTestWithException("procedure 2nameStartWithNumber(z2: char);")
     }
 
     @Test
     fun testArgumentWithoutType() {
-        doTestWithException("function helloFromJS(x, y, z)")
+        doTestWithException("function helloFromJS(x, y, z);")
+    }
+
+    @Test
+    fun testIdWithKeyAsSubstring() {
+        doTest("function functionfunction(): integer;")
+    }
+
+    @Test
+    fun testExtraToken() {
+        doTestWithException("function foo(): integer boolean;")
+    }
+
+    @Test
+    fun testUnexpectedSymbol() {
+        doTestWithException("function λfun(): real;")
+    }
+
+    @Test
+    fun testUnexpectedType() {
+        doTestWithException("function fun(): intERNATIONAL;")
+    }
+
+    @Test
+    fun testWhiteSpace() {
+        doTest("  function   fun   (   a :  real  ) :  real   ;")
     }
 
     private fun doTest(input: String) {

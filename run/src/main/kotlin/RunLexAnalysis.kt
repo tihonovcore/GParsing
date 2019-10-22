@@ -8,17 +8,18 @@ fun main() {
         "function f(a: Integer): Integer",
         "function asdff23456(a: Integer, b: Type): String",
         "procedure as1234567dff23456(z2: Type)",
-        "procedure 2nameStartWithNumber(z2: Type)"
-
+        "function functionfunction(): Integer"
     )
 
     for (string in lines) {
-        val tokens = Lexer().getTokens(string)
-        val parseResult = PascalParser(tokens).parse()
         println(string)
         println()
+
+        val tokens = Lexer().getTokens(string)
         println(tokens.render())
         println()
+
+        val parseResult = PascalParser(tokens).parse()
         println(RenderVisitor(parseResult).visit())
     }
 }

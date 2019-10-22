@@ -23,7 +23,7 @@ import org.tihonovcore.utils.Early
 fun main() {
     val x = Grammar(
         "QFPSNATDZ".toList(),
-        "01():,*_".toList(),
+        "01():,*_;".toList(),
         listOf(
             //error: here possible function foo(x: Int,): Int
 //            Rule('Q', "F"),
@@ -39,8 +39,8 @@ fun main() {
 //            Rule('Z', ",A")
 
 
-            Rule('Q', "F"),
-            Rule('Q', "P"),
+            Rule('Q', "F;"),
+            Rule('Q', "P;"),
             Rule('F', "0S:T"),
             Rule('P', "1S"),
             Rule('S', "N(A)"),
