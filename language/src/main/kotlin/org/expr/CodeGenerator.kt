@@ -54,6 +54,30 @@ class CodeGenerator(
             |}
         """.trimMargin())
         addln()
+        addln("""
+            |char readChar() {
+            |   char t;
+            |   scanf("%c", &t);
+            |   return t;
+            |}
+        """.trimMargin())
+        addln()
+        addln("""
+            |long long readLong() {
+            |   long long t;
+            |   scanf("%lld", &t);
+            |   return t;
+            |}
+        """.trimMargin())
+        addln()
+        addln("""
+            |double readDouble() {
+            |   double t;
+            |   scanf("%lf", &t);
+            |   return t;
+            |}
+        """.trimMargin())
+        addln()
         addln("int main() {")
 
         indent.append("    ")
@@ -70,9 +94,12 @@ class CodeGenerator(
 
         visit(ctx.ID())
         add(" = ")
-        when (ExprParser.idToType[ctx.ID().text]) {
+        when (parser.idToType[ctx.ID().text]) {
             "I" -> add("readInt()")
             "B" -> add("readBool()")
+            "C" -> add("readChar()")
+            "L" -> add("readLong()")
+            "D" -> add("readDouble()")
         }
         addln(";")
     }
@@ -89,13 +116,25 @@ class CodeGenerator(
         add("printf(")
         when (ctx.general().type) {
             "I" -> {
-                add("\"%d\n\", ")
+                add("\"%d\\n\", ")
                 visit(ctx.general())
             }
             "B" -> {
                 add("(")
                 visit(ctx.general())
-                add(") ? \"true\" : \"false\"\n")
+                add(") ? \"true\\n\" : \"false\\n\"")
+            }
+            "C" -> {
+                add("\"%c\\n\", ")
+                visit(ctx.general())
+            }
+            "D" -> {
+                add("\"%lf\\n\", ")
+                visit(ctx.general())
+            }
+            "L" -> {
+                add("\"%lld\\n\", ")
+                visit(ctx.general())
             }
         }
         addln(");")
@@ -115,6 +154,18 @@ class CodeGenerator(
                 add("(")
                 visit(ctx.general())
                 add(") ? \"true\" : \"false\"")
+            }
+            "C" -> {
+                add("\"%c\", ")
+                visit(ctx.general())
+            }
+            "D" -> {
+                add("\"%lf\", ")
+                visit(ctx.general())
+            }
+            "L" -> {
+                add("\"%lld\", ")
+                visit(ctx.general())
             }
         }
         addln(");")
@@ -147,7 +198,7 @@ class CodeGenerator(
         require(ctx != null)
 
         val name = ctx.children[1].text
-        val type = primitiveTypeMapper[ExprParser.idToType[name]]
+        val type = primitiveTypeMapper[parser.idToType[name]]
 
         add(type)
         add(" ")
@@ -167,6 +218,9 @@ class CodeGenerator(
 
     private val primitiveTypeMapper = mapOf(
         "I" to "int",
-        "B" to "bool"
+        "B" to "bool",
+        "D" to "double",
+        "L" to "long long",
+        "C" to "char"
     )
 }

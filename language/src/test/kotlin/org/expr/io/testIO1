@@ -1,0 +1,28 @@
+@code
+def x: Int;
+def y: Bool;
+read x;
+read y;
+println x > 2 == y;
+
+def z = readInt;
+def q = readBool;
+print z * z == z || q;
+
+@types
+x to I
+y to B
+z to I
+q to B
+
+@input
+10
+0
+200
+1
+
+@result
+false
+true
+
+@end

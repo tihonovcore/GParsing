@@ -1,0 +1,33 @@
+@code
+def i = readInt;
+def b = readBool;
+def c = readChar;
+def l = readLong;
+def d = readDouble;
+
+println i;
+println b;
+println c;
+println l;
+println d;
+
+@types
+i to I
+b to B
+c to C
+l to L
+d to D
+
+@input
+14
+0~
+3000000000
+3.141592
+@result
+14
+false
+~
+3000000000
+3.141592
+
+@end

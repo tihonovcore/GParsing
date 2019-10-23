@@ -1,0 +1,39 @@
+@code
+def i: Int;
+def b: Bool;
+def c: Char;
+def l: Long;
+def d: Double;
+
+read i;
+read b;
+read c;
+read l;
+read d;
+
+println i;
+println b;
+println c;
+println l;
+println d;
+
+@types
+i to I
+b to B
+c to C
+l to L
+d to D
+
+@input
+900
+1#
+3141592000
+2.7
+@result
+900
+true
+#
+3141592000
+2.700000
+
+@end

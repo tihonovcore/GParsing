@@ -5,10 +5,11 @@ import java.util.*;
 }
 
 @members {
-public static Map<String, String> idToType = new HashMap<>();
+public Map<String, String> idToType = new HashMap<>();
 
 static Map<String, String> ti = new HashMap<>();
 static {
+//дабл в приоритете, затем левый тип в приоритете (авто расширение инта в лонг?)
     ti.put("I+I", "I");
     ti.put("I-I", "I");
     ti.put("I*I", "I");
@@ -28,197 +29,332 @@ static {
     ti.put("!B", "B");
     ti.put("B==B", "B");
     ti.put("B!=B", "B");
+    
+    ti.put("D+I", "D");
+    ti.put("D+D", "D");
+    ti.put("I+D", "D");
+    ti.put("D-I", "D");
+    ti.put("D-D", "D");
+    ti.put("I-D", "D");
+    ti.put("D*I", "D");
+    ti.put("D*D", "D");
+    ti.put("I*D", "D");
+    ti.put("D/I", "D");
+    ti.put("D/D", "D");
+    ti.put("I/D", "D");
+    ti.put("D>I", "B"); //?
+    ti.put("D>D", "B");
+    ti.put("I>D", "B"); //?
+    ti.put("D<I", "B"); //?
+    ti.put("D<D", "B");
+    ti.put("I<D", "B"); //?
+    ti.put("D>=I", "B"); //?
+    ti.put("D>=D", "B");
+    ti.put("I>=D", "B"); //?
+    ti.put("D<=I", "B"); //?
+    ti.put("D<=D", "B");
+    ti.put("I<=D", "B"); //?
+    ti.put("D==I", "B"); //?
+    ti.put("D==D", "B");
+    ti.put("I==D", "B"); //?
+    ti.put("D!=I", "B"); //?
+    ti.put("D!=D", "B");
+    ti.put("I!=D", "B"); //?
+    ti.put("+D", "D");
+    ti.put("-D", "D");
+        
+    ti.put("L+L", "L");
+    ti.put("L+I", "L");
+    ti.put("L+D", "D");
+    ti.put("I+L", "L"); //?
+    ti.put("D+L", "D");
+    ti.put("L-L", "L");
+    ti.put("L-I", "L");
+    ti.put("L-D", "D");
+    ti.put("I-L", "L"); //?
+    ti.put("D-L", "D");
+    ti.put("L/L", "L");
+    ti.put("L/I", "L");
+    ti.put("I/L", "L"); //?
+    ti.put("L%L", "L");
+    ti.put("L%I", "L");
+    ti.put("I%L", "L"); //?
+    ti.put("L*L", "L");
+    ti.put("L*I", "L");
+    ti.put("L*D", "D");
+    ti.put("I*L", "L"); //?
+    ti.put("D*L", "D");
+    ti.put("L>L", "B");
+    ti.put("L>I", "B"); //?
+    ti.put("L>D", "B"); //?
+    ti.put("I>L", "B"); //?
+    ti.put("D>L", "B"); //?
+    ti.put("L<L", "B");
+    ti.put("L<I", "B"); //?
+    ti.put("L<D", "B"); //?
+    ti.put("I<L", "B"); //?
+    ti.put("D<L", "B"); //?
+    ti.put("L>=L", "B");
+    ti.put("L>=I", "B"); //?
+    ti.put("L>=D", "B"); //?
+    ti.put("I>=L", "B"); //?
+    ti.put("D>=L", "B");   //?
+    ti.put("L<=L", "B");
+    ti.put("L<=I", "B"); //?
+    ti.put("L<=D", "B"); //?
+    ti.put("I<=L", "B"); //?
+    ti.put("D<=L", "B"); //?
+    
+ 
+    ti.put("C+C", "C");
+    ti.put("C+D", "D"); //?
+    ti.put("C+L", "C");
+    ti.put("C+I", "C");
+    ti.put("D+C", "D");
+    ti.put("L+C", "L");
+    ti.put("I+C", "I");
+    
+    ti.put("C-C", "C");
+    ti.put("C-D", "D");
+    ti.put("C-L", "C");
+    ti.put("C-I", "C");
+    ti.put("D-C", "D");
+    ti.put("L-C", "L");
+    ti.put("I-C", "I");
+    
+    ti.put("C*C", "C");
+    ti.put("C*D", "D");
+    ti.put("C*L", "C");
+    ti.put("C*I", "C");
+    ti.put("D*C", "D");
+    ti.put("L*C", "L");
+    ti.put("I*C", "I");
+    
+    ti.put("C/C", "C");
+    ti.put("C/D", "D");
+    ti.put("C/L", "C");
+    ti.put("C/I", "C");
+    ti.put("D/C", "D");
+    ti.put("L/C", "L");
+    ti.put("I/C", "I");
+    
+    ti.put("C%C", "C");
+    ti.put("C%L", "C");
+    ti.put("C%I", "C");
+    ti.put("L%C", "L");
+    ti.put("I%C", "I");
+    
+    ti.put("C<C", "B");
+    ti.put("C<D", "B"); //?
+    ti.put("C<L", "B"); //?
+    ti.put("C<I", "B"); //?
+    ti.put("D<C", "B"); //?
+    ti.put("L<C", "B"); //?
+    ti.put("I<C", "B"); //?
+    
+    ti.put("C<=C", "B");
+    ti.put("C<=D", "B"); //?
+    ti.put("C<=L", "B"); //?
+    ti.put("C<=I", "B"); //?
+    ti.put("D<=C", "B"); //?
+    ti.put("L<=C", "B"); //?
+    ti.put("I<=C", "B");   //?
+    
+    ti.put("C>C", "B");
+    ti.put("C>D", "B"); //?
+    ti.put("C>L", "B"); //?
+    ti.put("C>I", "B"); //?
+    ti.put("D>C", "B"); //?
+    ti.put("L>C", "B"); //?
+    ti.put("I>C", "B"); //?
+
+    ti.put("C>=C", "B");
+    ti.put("C>=D", "B"); //?
+    ti.put("C>=L", "B"); //?
+    ti.put("C>=I", "B"); //?
+    ti.put("D>=C", "B"); //?
+    ti.put("L>=C", "B"); //?
+    ti.put("I>=C", "B"); //?
 }
 }
 
-statement : { idToType.clear(); } ((declaration | assingmnet | io) SEMICOLON)+;
+statement : { idToType.clear(); } ((declaration | assingmnet | ioStatement) SEMICOLON)+;
 
-io : print | println | read;
+ioStatement : print | println | read;
 
-general returns [Object value, String type] :
+general returns [String type] :
     orExpr {
-        $value = $orExpr.value;
         $type = $orExpr.type;
     }
     (
         OR orExpr {
-            if (!($value instanceof Boolean) || !($orExpr.value instanceof Boolean))
-                throw new IllegalArgumentException("or");
-            $value = (Boolean) $value || (Boolean) $orExpr.value;
+            if ($type != "B" || $orExpr.type != "B")
+                throw new IllegalArgumentException("Expected Bool arguments");
             $type = ti.get($type + "||" + $orExpr.type);
         }
     )*
     ;
 
-orExpr returns [Object value, String type] :
+orExpr returns [String type] :
     andExpr {
-        $value = $andExpr.value;
         $type = $andExpr.type;
     }
     (
         AND andExpr {
-            if (!($value instanceof Boolean) || !($andExpr.value instanceof Boolean))
-                throw new IllegalArgumentException("and");
-            $value = ((Boolean) $value) && ((Boolean) $andExpr.value);
-            $type = ti.get($type + "||" + $andExpr.type);
+            if ($type != "B" || $andExpr.type != "B")
+                throw new IllegalArgumentException("Expected Bool arguments");
+            $type = ti.get($type + "&&" + $andExpr.type);
         }
     )*
     ;
 
-andExpr returns [Object value, String type] :
+andExpr returns [String type] :
     compExpr {
-        $value = $compExpr.value;
         $type = $compExpr.type;
     }
     (
         EQUALSEQUALS compExpr {
-            $value = ($value == ($compExpr.value));
+            //TODO: check types
             $type = ti.get($type + "==" + $compExpr.type);
         }
         |
         NOTEQUALS compExpr {
-            $value = ($value != ($compExpr.value));
+            //TODO: check types
             $type = ti.get($type + "!=" + $compExpr.type);
         }
     )*
     ;
 
-compExpr returns [Object value, String type] :
+compExpr returns [String type] :
     NOT general {
-        if (!($general.value instanceof Boolean))
-            throw new IllegalArgumentException("not");
-        $value = !((Boolean) $general.value);
+        if ($general.type != "B")
+            throw new IllegalArgumentException("Expected Bool argument");
+
         $type = ti.get("!" + $general.type);
     }
     |
     LBRACKET general RBRACKET {
-        $value = $general.value;
         $type = $general.type;
     }
     |
     TRUE {
-        $value = true;
         $type = "B";
     }
     |
     FALSE {
-        $value = false;
         $type = "B";
     }
     |
-    ID { //значение не высчитывается
-        $value = false;
+    ID {
         $type = idToType.get($ID.getText());
     }
     |
     arithExpr {
-        $value = $arithExpr.value;
         $type = $arithExpr.type;
     }
     (
         LESS_OR_EQUALS arithExpr1 {
-            $value = $arithExpr.value <= $arithExpr1.value;
             $type = ti.get($type + "<=" + $arithExpr1.type);
         }
         |
         GREATER_OR_EQUALS arithExpr1 {
-            $value = $arithExpr.value >= $arithExpr1.value;
             $type = ti.get($type + ">=" + $arithExpr1.type);
         }
         |
         LESS arithExpr1 {
-            $value = $arithExpr.value < $arithExpr1.value;
             $type = ti.get($type + "<" + $arithExpr1.type);
         }
         |
         GREATER arithExpr1 {
-            $value = $arithExpr.value > $arithExpr1.value;
             $type = ti.get($type + ">" + $arithExpr1.type);
         }
     )?
 ;
 
-arithExpr1 returns [int value, String type] :
+arithExpr1 returns [String type] :
     arithExpr {
-        $value = $arithExpr.value;
         $type = $arithExpr.type;
     }
     ;
 
-arithExpr returns [int value, String type] :
+arithExpr returns [String type] :
     expression {
-        $value = $expression.value;
         $type = $expression.type;
     }
     ;
 
-expression returns [int value, String type] :
+expression returns [String type] :
     term {
-        $value = $term.value;
         $type = $term.type;
     }
     (
         PLUS term {
-            $value += $term.value;
             $type = ti.get($type + "+" + $term.type);
         }
         |
         MINUS term {
-            $value -= $term.value;
             $type = ti.get($type + "-" + $term.type);
         }
     )*
     ;
 
-term returns [int value, String type] :
+term returns [String type] :
     factor {
-        $value = $factor.value;
         $type = $factor.type;
     }
     (
         STAR factor {
-            $value *= $factor.value;
             $type = ti.get($type + "*" + $factor.type);
         }
         |
         SLASH factor {
-            $value /= $factor.value;
             $type = ti.get($type + "/" + $factor.type);
         }
         |
         PERCENT factor {
-            $value %= $factor.value;
             $type = ti.get($type + "%" + $factor.type);
         }
     )*
     ;
 
-factor returns [int value, String type] :
+factor returns [String type] :
     ID {
-        if (idToType.get($ID.getText()) != "I")
+        if (idToType.get($ID.getText()) == "B") //char?
             throw new IllegalStateException("Wrong type");
-        $value = 0;
         $type = idToType.get($ID.getText());
     }
     |
     NUMBER {
-        $value = Integer.parseInt($NUMBER.getText());
-        $type = "I";
+        long value = Long.parseLong($NUMBER.getText());
+        if (Integer.MIN_VALUE <= value && value <= Integer.MAX_VALUE) {
+            $type = "I";
+        } else {
+            $type = "L";
+        }
+    }
+    |
+    DOUBLE_NUMBER {
+        $type = "D";
+    }
+    |
+    SYMBOL {
+        $type = "C";
+    }
+    |
+    CHAR {
+        $type = "C";
     }
     |
     LBRACKET expression RBRACKET {
-        $value = $expression.value;
         $type = $expression.type;
     }
     |
     PLUS factor {
-        $value = $factor.value;
-        $type = $factor.type;
+        $type = ti.get("+" + $factor.type);
     }
     |
     MINUS factor {
-        $value = -$factor.value;
-        $type = $factor.type;
+        $type = ti.get("-" + $factor.type);
     }
     ;
 
@@ -263,6 +399,12 @@ readWithType returns [String type] :
     READINT { $type = "I"; }
     |
     READBOOL { $type = "B"; }
+    |
+    READCHAR { $type = "C"; }
+    |
+    READLONG { $type = "L"; }
+    |
+    READDOUBLE { $type = "D"; }
     ;
 
 read : READ ID;
@@ -273,11 +415,18 @@ typeID returns [String type] :
     INT { $type = "I"; }
     |
     BOOL { $type = "B"; }
+    |
+    CHAR { $type = "C"; }
+    |
+    LONG { $type = "L"; }
+    |
+    DOUBLE { $type = "D"; }
     ;
 
 
 
 NUMBER : [0-9]+;
+DOUBLE_NUMBER : NUMBER DOT NUMBER;
 PLUS   : '+';
 MINUS   : '-';
 STAR    : '*';
@@ -296,18 +445,29 @@ GREATER : '>';
 NOT: '!';
 OR : '||';
 AND : '&&';
+
 FALSE : 'false';
 TRUE : 'true';
+SYMBOL : QUOTE . QUOTE;
 
 COLON : ':';
 ASSIGN : '=';
+DOT : '.';
+QUOTE : '\'';
+DOUBLEQUOTE : '"';
 
 INT : 'Int';
 BOOL : 'Bool';
+CHAR : 'Char';
+LONG : 'Long';
+DOUBLE : 'Double';
 
 DEF : 'def';
 READINT : 'readInt';
 READBOOL : 'readBool';
+READCHAR : 'readChar';
+READLONG : 'readLong';
+READDOUBLE : 'readDouble';
 READ : 'read';
 PRINTLN : 'println';
 PRINT : 'print';

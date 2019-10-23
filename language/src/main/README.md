@@ -7,32 +7,31 @@
 
 **\[SOFT DEADLINE/HARD DEADLINE\]**
 
-## 01 Expressions \[16/20\] @EARLY
-* `ss` expressions (Int, Bool)
-* `ss` evaluation
-* `ss` yype inference
+## 01 Expressions \[16/20\]
+* `ok` Expressions (Int, Bool)
+* `ss` Evaluation
+* `ok` Type inference
 
-## 02 Variables & IO \[20/23\]
-* `ss` variable declaration
-* `ss` assignments
-* `ss` IO functions
-* `ss` codegen
-* `ss` compiler MPL
+## 02 Variables & IO \[20/23\] @Early
+* `ok` Variable declaration
+* `ok` Assignments
+* `ok` IO functions
+* `ok` Codegen
+* `ss` Compiler MPL
 
 ## 03 Types \[27/30\]
-* `ns` primitives (Long, Double, Char)
-* `ns` string
-* `ns` array
+* `ss` Primitives (Long, Double, Char)
+* `ns` String
+* `ns` Array
 
 ## 04 Conditions & loops & functions & classes \[3/6\]
 * `ns` if/else
 * `ns` while
 * `ns` repeat, for
-* `ns` functions
-* `ns` classes
+* `ns` Functions
+* `ns` Classes
 
 ## Other \[\*/*\]
 * String interpolation
-* map, filter, etc.
-* tuple
 * rm semicolon, use WS
+* comments
