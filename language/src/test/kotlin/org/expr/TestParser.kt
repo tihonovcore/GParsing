@@ -9,43 +9,82 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-abstract class TestParser : TestCase()
+abstract class TestParser : TestCase() {
+    @Early
+    protected fun doTest(path: Path) {
+        val lines = Files.readAllLines(path)
+        val c = lines.indexOf("@code")
+        val t = lines.indexOf("@types")
+        val i = lines.indexOf("@input")
+        val r = lines.indexOf("@result")
+        val e = lines.indexOf("@end")
+
+        val code = lines.subList(c + 1, t).joinToString(System.lineSeparator()) { it }
+        val expectedType = lines.subList(t + 1, i).filter { it.isNotEmpty() }.map {
+            val arr = it.split(" to ")
+            Pair(arr[0], arr[1])
+        }
+        val input = lines.subList(i + 1, r)
+        val expectedResult = lines.subList(r + 1, e).joinToString(System.lineSeparator()) { it }
+
+        doTest(code, input, expectedType, expectedResult)
+    }
+
+    @Early
+    protected fun doTest(
+        sourceCode: String,
+        input: List<Any>,
+        expectedTypesByName: List<Pair<String, String?>>,
+        expectedResult: String
+    ) {
+        val compiler = MPLCompiler()
+
+        Assert.assertEquals(expectedResult, compiler.evaluate(sourceCode, input))
+        for (nameTypePair in expectedTypesByName) {
+            Assert.assertEquals(
+                compiler.lastTypeMap.toString(),
+                nameTypePair.second,
+                compiler.lastTypeMap[nameTypePair.first]
+            )
+        }
+    }
+}
 
 class TestEvaluateExpression : TestParser() {
     @Test
     fun testAdd() {
-        doTest("1 + 2", 3, "I")
-        doTest("4 + 8", 12, "I")
-        doTest("449 + 783", 1232, "I")
-        doTest("2 + 3 + 49 + 5", 59, "I")
+        doTestVariables("1 + 2", 3, "I")
+        doTestVariables("4 + 8", 12, "I")
+        doTestVariables("449 + 783", 1232, "I")
+        doTestVariables("2 + 3 + 49 + 5", 59, "I")
     }
 
     @Test
     fun testSubtract() {
-        doTest("1 - 1", 0, "I")
-        doTest("1 - 100", -99, "I")
-        doTest("889 - 435", 454, "I")
-        doTest("10 - 2 - 3", 5, "I")
+        doTestVariables("1 - 1", 0, "I")
+        doTestVariables("1 - 100", -99, "I")
+        doTestVariables("889 - 435", 454, "I")
+        doTestVariables("10 - 2 - 3", 5, "I")
     }
 
     @Test
     fun testMultiply() {
-        doTest("10 * 1", 10, "I")
-        doTest("19 * (-2)", -38, "I")
-        doTest("106 * 23", 2438, "I")
-        doTest("7 * 12 * 3", 252, "I")
+        doTestVariables("10 * 1", 10, "I")
+        doTestVariables("19 * (-2)", -38, "I")
+        doTestVariables("106 * 23", 2438, "I")
+        doTestVariables("7 * 12 * 3", 252, "I")
     }
 
     @Test
     fun testDivide() {
-        doTest("12 / 4", 3, "I")
-        doTest("99 / 14", 7, "I")
-        doTest("17 / (-2)", -8, "I")
-        doTest("105 / 5 / 7", 3, "I")
-        doTest("9 % 2", 1, "I")
-        doTest("19 % (-2)", 1, "I")
-        doTest("1060 % 230", 140, "I")
-        doTest("121 % 25 % 8", 5, "I")
+        doTestVariables("12 / 4", 3, "I")
+        doTestVariables("99 / 14", 7, "I")
+        doTestVariables("17 / (-2)", -8, "I")
+        doTestVariables("105 / 5 / 7", 3, "I")
+        doTestVariables("9 % 2", 1, "I")
+        doTestVariables("19 % (-2)", 1, "I")
+        doTestVariables("1060 % 230", 140, "I")
+        doTestVariables("121 % 25 % 8", 5, "I")
 
 //        doTestWithException("5 / 0")
 //        doTestWithException("8 % 0")
@@ -53,72 +92,72 @@ class TestEvaluateExpression : TestParser() {
 
     @Test
     fun testUnaryOperators() {
-        doTest("+118", 118, "I")
-        doTest("+(+112)", 112, "I")
+        doTestVariables("+118", 118, "I")
+        doTestVariables("+(+112)", 112, "I")
 
-        doTest("-23", -23, "I")
-        doTest("-(-199)", 199, "I")
+        doTestVariables("-23", -23, "I")
+        doTestVariables("-(-199)", 199, "I")
     }
 
     @Test
     fun testPriority() {
-        doTest("2 + 2 * 2", 6, "I")
-        doTest("1 + 2 * 3 / 4 - 9", -7, "I")
-        doTest("10 - 6 * -23", 148, "I")
-        doTest("(17 - 14) * -12 / 3 + 4", -8, "I")
+        doTestVariables("2 + 2 * 2", 6, "I")
+        doTestVariables("1 + 2 * 3 / 4 - 9", -7, "I")
+        doTestVariables("10 - 6 * -23", 148, "I")
+        doTestVariables("(17 - 14) * -12 / 3 + 4", -8, "I")
     }
 
     @Test
     fun testOr() {
-        doTest("false || false", false, "B")
-        doTest("false || true", true, "B")
-        doTest("true || false", true, "B")
-        doTest("true || true", true, "B")
+        doTestVariables("false || false", false, "B")
+        doTestVariables("false || true", true, "B")
+        doTestVariables("true || false", true, "B")
+        doTestVariables("true || true", true, "B")
     }
 
     @Test
     fun testAnd() {
-        doTest("false && false", false, "B")
-        doTest("false && true", false, "B")
-        doTest("true && false", false, "B")
-        doTest("true && true", true, "B")
+        doTestVariables("false && false", false, "B")
+        doTestVariables("false && true", false, "B")
+        doTestVariables("true && false", false, "B")
+        doTestVariables("true && true", true, "B")
     }
 
     @Test
     fun testEquals() {
-        doTest("10 == 1", false, "B")
-        doTest("7 * 4 * 3 == 2 * 3 * 14", true, "B")
-        doTest("9 != -2", true, "B")
-        doTest("true && false != true", true, "B")
+        doTestVariables("10 == 1", false, "B")
+        doTestVariables("7 * 4 * 3 == 2 * 3 * 14", true, "B")
+        doTestVariables("9 != -2", true, "B")
+        doTestVariables("true && false != true", true, "B")
     }
 
     @Test
     fun testComparing() {
-        doTest("10 > 1", true, "B")
-        doTest("8 > 123", false, "B")
-        doTest("2 + 2 > 2", true, "B")
-        doTest("8 * 10 > 107", false, "B")
+        doTestVariables("10 > 1", true, "B")
+        doTestVariables("8 > 123", false, "B")
+        doTestVariables("2 + 2 > 2", true, "B")
+        doTestVariables("8 * 10 > 107", false, "B")
 
-        doTest("1 < 14", true, "B")
-        doTest("19 < -2", false, "B")
-        doTest("2 + 9 < 79 * 210 / 7", true, "B")
-        doTest("11 * 99 < (-2)", false, "B")
+        doTestVariables("1 < 14", true, "B")
+        doTestVariables("19 < -2", false, "B")
+        doTestVariables("2 + 9 < 79 * 210 / 7", true, "B")
+        doTestVariables("11 * 99 < (-2)", false, "B")
 
-        doTest("13 <= 14", true, "B")
-        doTest("14 <= 14", true, "B")
-        doTest("15 <= 14", false, "B")
+        doTestVariables("13 <= 14", true, "B")
+        doTestVariables("14 <= 14", true, "B")
+        doTestVariables("15 <= 14", false, "B")
 
-        doTest("80 >= 79", true, "B")
-        doTest("80 >= 80", true, "B")
-        doTest("80 >= 81", false, "B")
+        doTestVariables("80 >= 79", true, "B")
+        doTestVariables("80 >= 80", true, "B")
+        doTestVariables("80 >= 81", false, "B")
     }
 
     @Test
     fun testRandomExpression() {
-        doTest("(1 + 2) % 3 * 4 - 5 * -6 + 7/221 > 100 && false != true", false, "B")
+        doTestVariables("(1 + 2) % 3 * 4 - 5 * -6 + 7/221 > 100 && false != true", false, "B")
     }
 
-    private fun doTest(input: String, expectedResult: Any, expectedType: String?) {
+    private fun doTestVariables(input: String, expectedResult: Any, expectedType: String?) {
         val compiler = MPLCompiler()
 
         val sourceCode = """
@@ -145,26 +184,26 @@ class TestEvaluateExpression : TestParser() {
 class TestTypes : TestParser() {
     @Test
     fun testDouble() {
-        doTest("4.5", "4.500000", "D")
-        doTest("4 + 0.5", "4.500000", "D")
-        doTest("100 * 4.5", "450.000000", "D")
+        doTestTypes("4.5", "4.500000", "D")
+        doTestTypes("4 + 0.5", "4.500000", "D")
+        doTestTypes("100 * 4.5", "450.000000", "D")
     }
 
     @Test
     fun testChar() {
-        doTest("'a'", "a", "C")
-        doTest("'a' + 5", "f", "C")
+        doTestTypes("'a'", "a", "C")
+        doTestTypes("'a' + 5", "f", "C")
     }
 
     @Test
     fun testLong() {
-        doTest("56789071123456789", "56789071123456789", "L")
-        doTest("56789071123456789 + 1", "56789071123456790", "L")
-        doTest("56789071123456789 / 1000000", "56789071123", "L")
+        doTestTypes("56789071123456789", "56789071123456789", "L")
+        doTestTypes("56789071123456789 + 1", "56789071123456790", "L")
+        doTestTypes("56789071123456789 / 1000000", "56789071123", "L")
     }
 
     @Early
-    private fun doTest(input: String, expectedResult: Any, expectedType: String?) {
+    private fun doTestTypes(input: String, expectedResult: Any, expectedType: String?) {
         val compiler = MPLCompiler()
 
         val sourceCode = """
@@ -188,7 +227,7 @@ class TestVariables : TestParser() {
         val expectedType = listOf("x" to "I")
         val expectedResult = "10\n"
 
-        doTest(code, expectedType, expectedResult)
+        doTestVariables(code, expectedType, expectedResult)
     }
 
     @Test
@@ -201,7 +240,7 @@ class TestVariables : TestParser() {
         val expectedType = listOf("x" to "B")
         val expectedResult = "false\n"
 
-        doTest(code, expectedType, expectedResult)
+        doTestVariables(code, expectedType, expectedResult)
     }
 
     @Test
@@ -215,7 +254,7 @@ class TestVariables : TestParser() {
         val expectedType = listOf("x" to "I")
         val expectedResult = "71\n"
 
-        doTest(code, expectedType, expectedResult)
+        doTestVariables(code, expectedType, expectedResult)
     }
 
     @Test
@@ -229,7 +268,7 @@ class TestVariables : TestParser() {
         val expectedType = listOf("x" to "B")
         val expectedResult = "true\n"
 
-        doTest(code, expectedType, expectedResult)
+        doTestVariables(code, expectedType, expectedResult)
     }
 
     @Test
@@ -246,7 +285,7 @@ class TestVariables : TestParser() {
         val expectedType = listOf("x" to "B", "y" to "B")
         val expectedResult = "falsetrue\n"
 
-        doTest(code, expectedType, expectedResult)
+        doTestVariables(code, expectedType, expectedResult)
     }
 
     @Test
@@ -262,7 +301,7 @@ class TestVariables : TestParser() {
         val expectedType = listOf("x" to "I", "y" to "I")
         val expectedResult = "140\n"
 
-        doTest(code, expectedType, expectedResult)
+        doTestVariables(code, expectedType, expectedResult)
     }
 
     @Test
@@ -276,10 +315,10 @@ class TestVariables : TestParser() {
         val expectedType = listOf("printfdsf" to "I")
         val expectedResult = "10\n"
 
-        doTest(code, expectedType, expectedResult)
+        doTestVariables(code, expectedType, expectedResult)
     }
 
-    private fun doTest(
+    private fun doTestVariables(
         sourceCode: String,
         expectedTypesByName: List<Pair<String, String?>>,
         expectedResult: String
@@ -323,45 +362,6 @@ class TestIO : TestParser() {
     fun testStringIO2() {
         doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
     }
-
-    @Early
-    private fun doTest(path: Path) {
-        val lines = Files.readAllLines(path)
-        val c = lines.indexOf("@code")
-        val t = lines.indexOf("@types")
-        val i = lines.indexOf("@input")
-        val r = lines.indexOf("@result")
-        val e = lines.indexOf("@end")
-
-        val code = lines.subList(c + 1, t).joinToString(System.lineSeparator()) { it }
-        val expectedType = lines.subList(t + 1, i).filter { it.isNotEmpty() }.map {
-            val arr = it.split(" to ")
-            Pair(arr[0], arr[1])
-        }
-        val input = lines.subList(i + 1, r)
-        val expectedResult = lines.subList(r + 1, e).joinToString(System.lineSeparator()) { it }
-
-        doTest(code, input, expectedType, expectedResult)
-    }
-
-    @Early
-    private fun doTest(
-        sourceCode: String,
-        input: List<Any>,
-        expectedTypesByName: List<Pair<String, String?>>,
-        expectedResult: String
-    ) {
-        val compiler = MPLCompiler()
-
-        Assert.assertEquals(expectedResult, compiler.evaluate(sourceCode, input))
-        for (nameTypePair in expectedTypesByName) {
-            Assert.assertEquals(
-                compiler.lastTypeMap.toString(),
-                nameTypePair.second,
-                compiler.lastTypeMap[nameTypePair.first]
-            )
-        }
-    }
 }
 
 @Early
@@ -380,43 +380,22 @@ class TestString : TestParser() {
     fun testConcat() {
         doTest(Paths.get("./src/test/kotlin/org/expr/string/$name"))
     }
+}
 
-    @Early
-    private fun doTest(path: Path) {
-        val lines = Files.readAllLines(path)
-        val c = lines.indexOf("@code")
-        val t = lines.indexOf("@types")
-        val i = lines.indexOf("@input")
-        val r = lines.indexOf("@result")
-        val e = lines.indexOf("@end")
-
-        val code = lines.subList(c + 1, t).joinToString(System.lineSeparator()) { it }
-        val expectedType = lines.subList(t + 1, i).filter { it.isNotEmpty() }.map {
-            val arr = it.split(" to ")
-            Pair(arr[0], arr[1])
-        }
-        val input = lines.subList(i + 1, r)
-        val expectedResult = lines.subList(r + 1, e).joinToString(System.lineSeparator()) { it }
-
-        doTest(code, input, expectedType, expectedResult)
+@Early
+class TestArray : TestParser() {
+    @Test
+    fun testDeclaration() {
+        doTest(Paths.get("./src/test/kotlin/org/expr/array/$name"))
     }
 
-    @Early
-    private fun doTest(
-        sourceCode: String,
-        input: List<Any>,
-        expectedTypesByName: List<Pair<String, String?>>,
-        expectedResult: String
-    ) {
-        val compiler = MPLCompiler()
+    @Test
+    fun testFewArrays() {
+        doTest(Paths.get("./src/test/kotlin/org/expr/array/$name"))
+    }
 
-        Assert.assertEquals(expectedResult, compiler.evaluate(sourceCode, input))
-        for (nameTypePair in expectedTypesByName) {
-            Assert.assertEquals(
-                compiler.lastTypeMap.toString(),
-                nameTypePair.second,
-                compiler.lastTypeMap[nameTypePair.first]
-            )
-        }
+    @Test
+    fun testEqEq() {
+        doTest(Paths.get("./src/test/kotlin/org/expr/array/$name"))
     }
 }

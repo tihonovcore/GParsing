@@ -42,81 +42,108 @@ class CodeGenerator(
         addln()
         addln("""
             |int readInt() {
-            |   int t;
-            |   scanf("%d", &t);
-            |   return t;
+            |    int t;
+            |    scanf("%d", &t);
+            |    return t;
             |}
         """.trimMargin())
         addln()
         addln("""
             |bool readBool() {
-            |   int t;
-            |   scanf("%d", &t);
-            |   return t;
+            |    int t;
+            |    scanf("%d", &t);
+            |    return t;
             |}
         """.trimMargin())
         addln()
         addln("""
             |char readChar() {
-            |   char t;
-            |   scanf("%c", &t);
-            |   return t;
+            |    char t;
+            |    scanf("%c", &t);
+            |    return t;
             |}
         """.trimMargin())
         addln()
         addln("""
             |long long readLong() {
-            |   long long t;
-            |   scanf("%lld", &t);
-            |   return t;
+            |    long long t;
+            |    scanf("%lld", &t);
+            |    return t;
             |}
         """.trimMargin())
         addln()
         addln("""
             |double readDouble() {
-            |   double t;
-            |   scanf("%lf", &t);
-            |   return t;
+            |    double t;
+            |    scanf("%lf", &t);
+            |    return t;
             |}
         """.trimMargin())
         addln()
         addln("""
             |char* readLine() {
-            |   static char t[256];
-            |   fgets(t, 256, stdin);
-            |   return t;
+            |    static char t[256];
+            |    fgets(t, 256, stdin);
+            |    return t;
             |}
         """.trimMargin())
         addln()
         addln("""
             |char* readString() {
-            |   static char t[256];
-            |   scanf("%s", &t);
-            |   return t;
+            |    static char t[256];
+            |    scanf("%s", &t);
+            |    return t;
             |}
         """.trimMargin())
         addln()
         addln("""
             |char* concat(char* x, char* y) {
-            |   int len = strlen(x) + strlen(y) + 1;
-            |   char* t = malloc(len);
-            |   strcat(t, x);
-            |   strcat(t, y);
-            |   return t;
+            |    int len = strlen(x) + strlen(y) + 1;
+            |    char* t = malloc(len);
+            |    strcat(t, x);
+            |    strcat(t, y);
+            |    return t;
             |}
         """.trimMargin())
         addln()
         addln("""
             |char* assign(char* x, char* y) {
-            |   free(x);
-            |   return strdup(y);
+            |    free(x);
+            |    return strdup(y);
+            |}
+        """.trimMargin())
+        addln()
+        addln("""
+            |int* assignArray(int* x, int* y, int* x_size, int* y_size) {
+            |    free(x);
+            |    *x_size = *y_size;
+            |    x = malloc(*y_size * sizeof(int));
+            |    for (int i = 0; i < *y_size; i++) {
+            |         x[i] = y[i];
+            |    }
+            |    return x;
             |}
         """.trimMargin())
         addln()
         addln("int main() {")
-
         indent.append("    ")
+
+        parser.idToType.keys.filter { parser.idToType[it]?.startsWith("A") ?: false }.forEach {
+            addln("int ${it}_size;")
+        }
+        addln()
+
+        //main code
         node.accept(this)
+
+        addln()
+        parser.idToType.keys.filter {
+            val type = parser.idToType[it].orEmpty()
+            type.startsWith("A") || it == "S"
+        }.forEach {
+            addln("free($it);")
+        }
+
         indent = StringBuilder(indent.dropLast(4))
 
         addln("}")
@@ -230,14 +257,16 @@ class CodeGenerator(
         require(ctx != null)
 
         visit(ctx.children[0])
-        add(" = ")
 
         if (ctx.children[1] is ExprParser.GetContext) {
             visit(ctx.children[1])
+            add(" = ")
 
             visit(ctx.children[3])
             addln(";")
         } else {
+            add(" = ")
+
             if (ctx.children[2] is ExprParser.StringContext || (ctx.children[2] as ExprParser.GeneralContext).type == "S") { //is String
                 if (ctx.children[2] is ExprParser.GeneralContext) { //если это не general, то "asd"
                     add("assign(")
@@ -251,7 +280,21 @@ class CodeGenerator(
                     add(")")
                 }
             } else {
-                visit(ctx.children[2])
+                if (ctx.general.type.startsWith("A")) {
+                    add("assignArray(")
+                    visit(ctx.children[0])
+                    add(", ")
+                    visit(ctx.children[2])
+                    add(", &")
+                    visit(ctx.children[0])
+                    add("_size")
+                    add(", &")
+                    visit(ctx.children[2])
+                    add("_size")
+                    add(")")
+                } else {
+                    visit(ctx.children[2])
+                }
             }
             addln(";")
         }
@@ -272,7 +315,8 @@ class CodeGenerator(
         require(ctx != null)
 
         val name = ctx.children[1].text
-        val type = primitiveTypeMapper[parser.idToType[name]]
+        val typeTemplate = parser.idToType[name].orEmpty() //TODO: what if type == null?
+        val type = primitiveTypeMapper[typeTemplate] ?: typeTemplate.arrayTypeMapper()
 
         add(type)
         add(" ")
@@ -295,6 +339,11 @@ class CodeGenerator(
                     }
                 } else {
                     visit(ctx.children[3])
+                    if (ctx.array != null) {
+                        addln(";")
+                        add("${name}_size = ")
+                        visit(ctx.array.children[2])
+                    }
                 }
                 addln(";")
             }
@@ -302,6 +351,17 @@ class CodeGenerator(
                 addln(";")
             }
         }
+    }
+
+    override fun visitArray(ctx: ExprParser.ArrayContext?) {
+        require(ctx != null)
+
+        val type = primitiveTypeMapper[ctx.type.drop(1)]
+        add("malloc(")
+        add("sizeof($type)")
+        add(" * ")
+        visit(ctx.children[2])
+        add(")")
     }
 
     private val primitiveTypeMapper = mapOf(
@@ -312,4 +372,9 @@ class CodeGenerator(
         "C" to "char",
         "S" to "char*"
     )
+
+    private fun String.arrayTypeMapper(): String {
+        val type = primitiveTypeMapper[this.drop(1)]!! //TODO: что если это многомерный массив
+        return "$type*"
+    }
 }

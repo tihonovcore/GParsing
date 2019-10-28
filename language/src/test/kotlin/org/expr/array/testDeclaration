@@ -1,0 +1,20 @@
+@code
+def a = Array[Int](4);
+a[0] = 3;
+a[1] = 0;
+a[2] = 1;
+a[3] = 4;
+
+print a[0];
+print '.';
+print a[2];
+print a[3];
+
+@types
+a to AI
+
+@input
+@result
+3.14
+
+@end

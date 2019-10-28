@@ -5,6 +5,10 @@ import java.util.*;
 }
 
 @members {
+static boolean NOTEQ(String a, String b) {
+    return !a.equals(b);
+}
+
 public Map<String, String> idToType = new HashMap<>();
 
 static Map<String, String> ti = new HashMap<>();
@@ -178,7 +182,7 @@ static {
 }
 }
 
-statement : { idToType.clear(); } ((declaration | assingmnet | ioStatement) SEMICOLON)+;
+statement : ((declaration | assingmnet | ioStatement) SEMICOLON)+;
 
 ioStatement : print | println | read;
 
@@ -188,7 +192,7 @@ general returns [String type] :
     }
     (
         OR orExpr {
-            if ($type != "B" || $orExpr.type != "B")
+            if (NOTEQ($type, "B") || NOTEQ($orExpr.type, "B"))
                 throw new IllegalArgumentException("Expected Bool arguments");
             $type = ti.get($type + "||" + $orExpr.type);
         }
@@ -201,7 +205,7 @@ orExpr returns [String type] :
     }
     (
         AND andExpr {
-            if ($type != "B" || $andExpr.type != "B")
+            if (NOTEQ($type, "B") || NOTEQ($andExpr.type, "B"))
                 throw new IllegalArgumentException("Expected Bool arguments");
             $type = ti.get($type + "&&" + $andExpr.type);
         }
@@ -227,7 +231,7 @@ andExpr returns [String type] :
 
 compExpr returns [String type] :
     NOT general {
-        if ($general.type != "B")
+        if (NOTEQ($general.type, "B"))
             throw new IllegalArgumentException("Expected Bool argument");
 
         $type = ti.get("!" + $general.type);
@@ -320,17 +324,19 @@ term returns [String type] :
 factor returns [String type] :
     ID {
         //NOTE: it can be String
-        if (idToType.get($ID.getText()) == "B") //char?
-            throw new IllegalStateException("Wrong type");
+        if (idToType.get($ID.getText()) == "B") //char? //TODO: EQEQ
+            throw new IllegalStateException("Wrong type"); //точно?
         $type = idToType.get($ID.getText());
     }
     (
         get[$type] {
-            if (idToType.get($ID.getText()) != "S") //TODO: support arrays
-                throw new IllegalStateException("Expected Iterable type");
-
-            if (idToType.get($ID.getText()) == "S") {
+            String recieverType = idToType.get($ID.getText());
+            if (recieverType == "S") { //TODO: EQEQ
                 $type = "C";
+            } else if (recieverType.startsWith("A")) {
+                $type = recieverType.substring(1, recieverType.length());
+            } else {
+                throw new IllegalStateException("Expected Iterable type");
             }
         }
     )?
@@ -376,6 +382,8 @@ get [String recieverType] returns [String type] :
 
         if ($recieverType == "S") {
             $type = "C";
+        } else if ($recieverType.startsWith("A")) {
+            $type = $recieverType.substring(1, $recieverType.length());
         }
     }
     ;
@@ -402,7 +410,10 @@ declaration :
             string {
                 idToType.put($ID.getText(), "S");
             }
-            //TODO: support `get`
+            |
+            array {
+                idToType.put($ID.getText(), $array.type);
+            }
         )
     )
     ;
@@ -411,7 +422,8 @@ assingmnet :
     ID
     (
         get[idToType.get($ID.getText())] {
-            if (idToType.get($ID.getText()) != "S") //TODO: support arrays
+            String recieverType = idToType.get($ID.getText());
+            if (NOTEQ(recieverType, "S") && !recieverType.startsWith("A"))
                 throw new IllegalStateException("Expected Iterable type");
         }
     )?
@@ -419,9 +431,9 @@ assingmnet :
     (
         general {
             if (_localctx.get != null) {
-                if ($get.type != $general.type)
+                if (NOTEQ($get.type, $general.type))
                     throw new IllegalStateException("Wrong types");
-            } else if (idToType.get($ID.getText()) != $general.type) {
+            } else if (NOTEQ(idToType.get($ID.getText()), $general.type)) {
                 throw new IllegalStateException("Wrong types");
             }
         }
@@ -432,10 +444,24 @@ assingmnet :
         }
         |
         string {
+            if (NOTEQ(idToType.get($ID.getText()), "S"))
+                throw new IllegalStateException("Wrong types");
             idToType.put($ID.getText(), "S");
         }
-        //TODO: support `get`
+        |
+        array {
+            if (NOTEQ(idToType.get($ID.getText()), $array.type))
+                throw new IllegalStateException("Wrong types");
+        }
     )
+    ;
+
+array returns [String type] :
+    typeID LBRACKET general RBRACKET {
+        if (!$typeID.type.startsWith("A"))
+            throw new IllegalArgumentException("Expected array");
+        $type = $typeID.type;
+    }
     ;
 
 string :
@@ -443,7 +469,9 @@ string :
     ;
 
 concat :
-    CONCAT LBRACKET (ID | STRINGVALUE) COMMA (ID | STRINGVALUE) RBRACKET
+    CONCAT LBRACKET (ID | STRINGVALUE | array) COMMA (ID | STRINGVALUE | array) RBRACKET {
+        //TODO: expected left.type == right.type
+    }
     ;
 
 readWithType returns [String type] :
@@ -478,6 +506,8 @@ typeID returns [String type] :
     DOUBLE { $type = "D"; }
     |
     STRING { $type = "S"; }
+    |
+    ARRAY SqLB typeID SqRB { $type = "A" + $typeID.type; }
     ;
 
 
@@ -527,6 +557,7 @@ CHAR : 'Char';
 LONG : 'Long';
 DOUBLE : 'Double';
 STRING : 'String';
+ARRAY : 'Array';
 
 DEF : 'def';
 

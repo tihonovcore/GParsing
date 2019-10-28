@@ -1,0 +1,35 @@
+@code
+def a = Array[Int](4);
+def b = Array[Int](4);
+
+a[0] = 333;
+a[1] = 111;
+a[2] = 444;
+a[3] = 555;
+
+b[0] = 3;
+b[1] = 1;
+b[2] = 1;
+b[3] = 4;
+
+a = b;
+
+b[0] = 7;
+b[1] = 7;
+b[2] = 7;
+b[3] = 7;
+
+print a[0];
+print '.';
+print a[2];
+print a[3];
+
+@types
+a to AI
+b to AI
+
+@input
+@result
+3.14
+
+@end
