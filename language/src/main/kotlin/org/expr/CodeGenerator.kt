@@ -37,6 +37,8 @@ class CodeGenerator(
     fun gen(): String {
         addln("#include <stdio.h>")
         addln("#include <stdbool.h>")
+        addln("#include <stdlib.h>")
+        addln("#include <string.h>")
         addln()
         addln("""
             |int readInt() {
@@ -78,6 +80,39 @@ class CodeGenerator(
             |}
         """.trimMargin())
         addln()
+        addln("""
+            |char* readLine() {
+            |   static char t[256];
+            |   fgets(t, 256, stdin);
+            |   return t;
+            |}
+        """.trimMargin())
+        addln()
+        addln("""
+            |char* readString() {
+            |   static char t[256];
+            |   scanf("%s", &t);
+            |   return t;
+            |}
+        """.trimMargin())
+        addln()
+        addln("""
+            |char* concat(char* x, char* y) {
+            |   int len = strlen(x) + strlen(y) + 1;
+            |   char* t = malloc(len);
+            |   strcat(t, x);
+            |   strcat(t, y);
+            |   return t;
+            |}
+        """.trimMargin())
+        addln()
+        addln("""
+            |char* assign(char* x, char* y) {
+            |   free(x);
+            |   return strdup(y);
+            |}
+        """.trimMargin())
+        addln()
         addln("int main() {")
 
         indent.append("    ")
@@ -100,6 +135,7 @@ class CodeGenerator(
             "C" -> add("readChar()")
             "L" -> add("readLong()")
             "D" -> add("readDouble()")
+            "S" -> add("readString()")
         }
         addln(";")
     }
@@ -136,9 +172,12 @@ class CodeGenerator(
                 add("\"%lld\\n\", ")
                 visit(ctx.general())
             }
+            "S" -> {
+                add("\"%s\\n\", ")
+                visit(ctx.general())
+            }
         }
         addln(");")
-
     }
 
     override fun visitPrint(ctx: ExprParser.PrintContext?) {
@@ -167,6 +206,10 @@ class CodeGenerator(
                 add("\"%lld\", ")
                 visit(ctx.general())
             }
+            "S" -> {
+                add("\"%s\", ")
+                visit(ctx.general())
+            }
         }
         addln(");")
     }
@@ -182,18 +225,49 @@ class CodeGenerator(
         add(primitiveTypeMapper[ctx.type])
     }
 
+    //TODO: clear code
     override fun visitAssingmnet(ctx: ExprParser.AssingmnetContext?) {
         require(ctx != null)
 
-        val left = ctx.children[0].text //TODO: visit
-        val right = ctx.children[2].text //TODO: visit
-
-        add(left)
+        visit(ctx.children[0])
         add(" = ")
-        add(right)
-        addln(";")
+
+        if (ctx.children[1] is ExprParser.GetContext) {
+            visit(ctx.children[1])
+
+            visit(ctx.children[3])
+            addln(";")
+        } else {
+            if (ctx.children[2] is ExprParser.StringContext || (ctx.children[2] as ExprParser.GeneralContext).type == "S") { //is String
+                if (ctx.children[2] is ExprParser.GeneralContext) { //если это не general, то "asd"
+                    add("assign(")
+                    visit(ctx.children[0])
+                    add(", ")
+                    visit(ctx.children[2])
+                    add(")")
+                } else { //"sdf"
+                    add("strdup(")
+                    visit(ctx.children[2])
+                    add(")")
+                }
+            } else {
+                visit(ctx.children[2])
+            }
+            addln(";")
+        }
     }
 
+    override fun visitConcat(ctx: ExprParser.ConcatContext?) {
+        require(ctx != null)
+
+        add("concat(")
+        visit(ctx.children[2]) //first
+        add(", ")
+        visit(ctx.children[4]) //second
+        add(")")
+    }
+
+    //TODO: clear code
     override fun visitDeclaration(ctx: ExprParser.DeclarationContext?) {
         require(ctx != null)
 
@@ -207,7 +281,21 @@ class CodeGenerator(
         when (ctx.children[2].text) {
             "=" -> {
                 add(" = ")
-                visit(ctx.children[3])
+                if (type == "char*") {
+                    if (ctx.children[3] is TerminalNode) { //terminal
+                        val string = ctx.children[3].text.drop(1).dropLast(1) //rm '"'
+                        addln("malloc(${string.length} + 1);")
+                        add("strcpy($name, \"$string\")")
+                    } else if (ctx.children[3] is ExprParser.ConcatContext?) {
+                        visit(ctx.children[3])
+                    } else { //nonterminal
+                        add("strdup(")
+                        visit(ctx.children[3])
+                        add(")")
+                    }
+                } else {
+                    visit(ctx.children[3])
+                }
                 addln(";")
             }
             ":" -> {
@@ -221,6 +309,7 @@ class CodeGenerator(
         "B" to "bool",
         "D" to "double",
         "L" to "long long",
-        "C" to "char"
+        "C" to "char",
+        "S" to "char*"
     )
 }

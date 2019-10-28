@@ -1,0 +1,14 @@
+@code
+def x = "string";
+x[0] = 'S';
+x[5] = 'G';
+print x;
+
+@types
+x to S
+
+@input
+@result
+StrinG
+
+@end

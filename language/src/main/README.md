@@ -21,7 +21,7 @@
 
 ## 03 Types \[27/30\]
 * `ss` Primitives (Long, Double, Char)
-* `ns` String
+* `ss` String
 * `ns` Array
 
 ## 04 Conditions & loops & functions & classes \[3/6\]

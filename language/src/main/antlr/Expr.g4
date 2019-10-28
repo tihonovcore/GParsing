@@ -319,10 +319,21 @@ term returns [String type] :
 
 factor returns [String type] :
     ID {
+        //NOTE: it can be String
         if (idToType.get($ID.getText()) == "B") //char?
             throw new IllegalStateException("Wrong type");
         $type = idToType.get($ID.getText());
     }
+    (
+        get[$type] {
+            if (idToType.get($ID.getText()) != "S") //TODO: support arrays
+                throw new IllegalStateException("Expected Iterable type");
+
+            if (idToType.get($ID.getText()) == "S") {
+                $type = "C";
+            }
+        }
+    )?
     |
     NUMBER {
         long value = Long.parseLong($NUMBER.getText());
@@ -358,6 +369,17 @@ factor returns [String type] :
     }
     ;
 
+get [String recieverType] returns [String type] :
+    SqLB general SqRB {
+        if ($general.type != "I")
+            throw new IllegalArgumentException("Excpected Int");
+
+        if ($recieverType == "S") {
+            $type = "C";
+        }
+    }
+    ;
+
 declaration :
     DEF ID {
         if (idToType.containsKey($ID.getText())) throw new IllegalStateException("Redeclaration");
@@ -376,23 +398,52 @@ declaration :
             readWithType {
                 idToType.put($ID.getText(), $readWithType.type);
             }
+            |
+            string {
+                idToType.put($ID.getText(), "S");
+            }
+            //TODO: support `get`
         )
     )
     ;
 
 assingmnet :
-    ID ASSIGN
-        (
-            general {
-                if (idToType.get($ID.getText()) != $general.type)
+    ID
+    (
+        get[idToType.get($ID.getText())] {
+            if (idToType.get($ID.getText()) != "S") //TODO: support arrays
+                throw new IllegalStateException("Expected Iterable type");
+        }
+    )?
+    ASSIGN
+    (
+        general {
+            if (_localctx.get != null) {
+                if ($get.type != $general.type)
                     throw new IllegalStateException("Wrong types");
+            } else if (idToType.get($ID.getText()) != $general.type) {
+                throw new IllegalStateException("Wrong types");
             }
-            |
-            readWithType {
-                if (idToType.get($ID.getText()) != $readWithType.type)
-                    throw new IllegalStateException("Wrong types");
-            }
-        )
+        }
+        |
+        readWithType {
+            if (idToType.get($ID.getText()) != $readWithType.type)
+                throw new IllegalStateException("Wrong types");
+        }
+        |
+        string {
+            idToType.put($ID.getText(), "S");
+        }
+        //TODO: support `get`
+    )
+    ;
+
+string :
+    STRINGVALUE | concat
+    ;
+
+concat :
+    CONCAT LBRACKET (ID | STRINGVALUE) COMMA (ID | STRINGVALUE) RBRACKET
     ;
 
 readWithType returns [String type] :
@@ -405,6 +456,10 @@ readWithType returns [String type] :
     READLONG { $type = "L"; }
     |
     READDOUBLE { $type = "D"; }
+    |
+    READSTRING { $type = "S"; }
+    |
+    READLINE { $type = "S"; }
     ;
 
 read : READ ID;
@@ -421,6 +476,8 @@ typeID returns [String type] :
     LONG { $type = "L"; }
     |
     DOUBLE { $type = "D"; }
+    |
+    STRING { $type = "S"; }
     ;
 
 
@@ -434,6 +491,8 @@ SLASH    : '/';
 PERCENT    : '%';
 LBRACKET     : '(';
 RBRACKET     : ')';
+SqLB : '[';
+SqRB : ']';
 
 EQUALSEQUALS : '==';
 NOTEQUALS : '!=';
@@ -453,21 +512,34 @@ SYMBOL : QUOTE . QUOTE;
 COLON : ':';
 ASSIGN : '=';
 DOT : '.';
+COMMA : ',';
 QUOTE : '\'';
-DOUBLEQUOTE : '"';
+
+SLASHN : '\\n';
+SLASHSLASH : '\\\\';
+SLASHDOLLAR : '\\$';
+
+STRINGVALUE : '"' (~('\\' | '$' |'"') | SLASHN | SLASHSLASH | SLASHDOLLAR)* '"';
 
 INT : 'Int';
 BOOL : 'Bool';
 CHAR : 'Char';
 LONG : 'Long';
 DOUBLE : 'Double';
+STRING : 'String';
 
 DEF : 'def';
+
+CONCAT : 'concat';
+
 READINT : 'readInt';
 READBOOL : 'readBool';
 READCHAR : 'readChar';
 READLONG : 'readLong';
 READDOUBLE : 'readDouble';
+READSTRING : 'readString';
+READLINE : 'readLine';
+
 READ : 'read';
 PRINTLN : 'println';
 PRINT : 'print';

@@ -314,6 +314,73 @@ class TestIO : TestParser() {
         doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
     }
 
+    @Test
+    fun testStringIO() {
+        doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
+    }
+
+    @Test
+    fun testStringIO2() {
+        doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
+    }
+
+    @Early
+    private fun doTest(path: Path) {
+        val lines = Files.readAllLines(path)
+        val c = lines.indexOf("@code")
+        val t = lines.indexOf("@types")
+        val i = lines.indexOf("@input")
+        val r = lines.indexOf("@result")
+        val e = lines.indexOf("@end")
+
+        val code = lines.subList(c + 1, t).joinToString(System.lineSeparator()) { it }
+        val expectedType = lines.subList(t + 1, i).filter { it.isNotEmpty() }.map {
+            val arr = it.split(" to ")
+            Pair(arr[0], arr[1])
+        }
+        val input = lines.subList(i + 1, r)
+        val expectedResult = lines.subList(r + 1, e).joinToString(System.lineSeparator()) { it }
+
+        doTest(code, input, expectedType, expectedResult)
+    }
+
+    @Early
+    private fun doTest(
+        sourceCode: String,
+        input: List<Any>,
+        expectedTypesByName: List<Pair<String, String?>>,
+        expectedResult: String
+    ) {
+        val compiler = MPLCompiler()
+
+        Assert.assertEquals(expectedResult, compiler.evaluate(sourceCode, input))
+        for (nameTypePair in expectedTypesByName) {
+            Assert.assertEquals(
+                compiler.lastTypeMap.toString(),
+                nameTypePair.second,
+                compiler.lastTypeMap[nameTypePair.first]
+            )
+        }
+    }
+}
+
+@Early
+class TestString : TestParser() {
+    @Test
+    fun testGetAndAssign() {
+        doTest(Paths.get("./src/test/kotlin/org/expr/string/$name"))
+    }
+
+    @Test
+    fun testAssign() {
+        doTest(Paths.get("./src/test/kotlin/org/expr/string/$name"))
+    }
+
+    @Test
+    fun testConcat() {
+        doTest(Paths.get("./src/test/kotlin/org/expr/string/$name"))
+    }
+
     @Early
     private fun doTest(path: Path) {
         val lines = Files.readAllLines(path)

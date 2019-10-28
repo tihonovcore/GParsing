@@ -1,0 +1,13 @@
+@code
+def x = readLine;
+x[0] = '&';
+print x;
+
+@types
+x to S
+@input
+omg read me
+@result
+&mg read me
+
+@end

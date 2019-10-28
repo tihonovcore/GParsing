@@ -1,0 +1,20 @@
+@code
+def x = "Hello, ";
+def y = "World!";
+def z = concat(x, y);
+println z;
+
+x = concat(x, y);
+print x;
+
+@types
+x to S
+y to S
+z to S
+
+@input
+@result
+Hello, World!
+Hello, World!
+
+@end

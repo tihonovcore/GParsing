@@ -1,0 +1,19 @@
+@code
+def x = readString;
+def y = readString;
+x[0] = '&';
+y[3] = '&';
+
+println x;
+print y;
+
+@types
+x to S
+y to S
+@input
+omg read me
+@result
+&mg
+rea&
+
+@end

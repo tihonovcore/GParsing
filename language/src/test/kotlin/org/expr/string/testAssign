@@ -1,0 +1,27 @@
+@code
+def x = "value";
+def y = x;
+def z: String;
+z = "asd";
+z = y;
+
+x[0] = 'V';
+y[1] = 'A';
+z[2] = 'L';
+
+println x;
+println y;
+print z;
+
+@types
+x to S
+y to S
+z to S
+
+@input
+@result
+Value
+vAlue
+vaLue
+
+@end
