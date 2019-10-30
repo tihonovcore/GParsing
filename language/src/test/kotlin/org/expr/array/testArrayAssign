@@ -1,0 +1,25 @@
+@code
+def ad = Array[Double](2);
+ad[0] = 1.2;
+ad[1] = 4.8;
+
+def ad2 = ad;
+
+def ad3: Array[Double];
+ad3 = ad;
+
+ad[0] = 1.49;
+
+println ad[0];
+println ad2[0];
+println ad3[0];
+
+@types
+ad to AD
+@input
+@result
+1.490000
+1.200000
+1.200000
+
+@end

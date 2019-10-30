@@ -12,26 +12,32 @@
 * `ss` Evaluation
 * `ok` Type inference
 
-## 02 Variables & IO \[20/23\] @Early
+## 02 Variables & IO \[20/23\]
 * `ok` Variable declaration
 * `ok` Assignments
 * `ok` IO functions
 * `ok` Codegen
 * `ss` Compiler MPL
 
-## 03 Types \[27/30\]
+## 03 Types \[27/30\] @Early
 * `ss` Primitives (Long, Double, Char)
 * `ss` String
-* `ns` Array
+* `ss` Array
 
-## 04 Conditions & loops & functions & classes \[3/6\]
+## 04 Conditions & loops & functions \[3/6\]
 * `ns` if/else
 * `ns` while
-* `ns` repeat, for
 * `ns` Functions
-* `ns` Classes
 
-## Other \[\*/*\]
-* String interpolation
+## Other \[3/10\]
 * rm semicolon, use WS
-* comments
+* SingleLine-comments
+* concat like `concat("strin", 'g')`
+* cast
+
+## Probably will supported never
+* String interpolation - сложно, строка становиться нетерминалом, а пробел символом
+* ToString - сложно вычислять длину, можно заменить на конкат
+* Multiline-comments - сложно и излишне
+* Многомерные массивы - *потенциальные* проблемы с ссылочностью (пока забанены (в тч массивы строк))
+* Classes - сложны в реализации, могут породить проблемы с ссылочностью

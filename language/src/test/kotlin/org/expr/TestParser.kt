@@ -362,6 +362,11 @@ class TestIO : TestParser() {
     fun testStringIO2() {
         doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
     }
+
+    @Test
+    fun testPrintArray() {
+        doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
+    }
 }
 
 @Early
@@ -380,22 +385,34 @@ class TestString : TestParser() {
     fun testConcat() {
         doTest(Paths.get("./src/test/kotlin/org/expr/string/$name"))
     }
+
+    @Test
+    fun testConstantString() {
+        doTest(Paths.get("./src/test/kotlin/org/expr/string/$name"))
+    }
 }
 
 @Early
 class TestArray : TestParser() {
-    @Test
-    fun testDeclaration() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/array/$name"))
+    private fun doTest() {
+        super.doTest(Paths.get("./src/test/kotlin/org/expr/array/$name"))
     }
 
     @Test
-    fun testFewArrays() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/array/$name"))
-    }
+    fun testDeclaration() = doTest()
 
     @Test
-    fun testEqEq() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/array/$name"))
-    }
+    fun testFewArrays() = doTest()
+
+    @Test
+    fun testEqEq() = doTest()
+
+    @Test
+    fun testArraysTypeParameter() = doTest()
+
+    @Test
+    fun testArrayAssign() = doTest()
+
+    @Test
+    fun testConcat() = doTest()
 }

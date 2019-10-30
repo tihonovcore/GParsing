@@ -1,0 +1,41 @@
+@code
+def arrd = Array[Double](5);
+arrd[1] = 5.2;
+arrd[2] = 3.14;
+
+println arrd[0];
+println arrd[1];
+println arrd[2];
+
+def arrb = Array[Bool](2);
+arrb[0] = false;
+arrb[1] = true;
+
+println arrb[0];
+println arrb[1];
+
+def arrc = Array[Char](4);
+arrc[0] = 'h';
+arrc[1] = 'e';
+arrc[2] = 'l';
+arrc[3] = 'p';
+
+print arrc[0];
+print arrc[1];
+print arrc[2];
+print arrc[3];
+
+@types
+arrd to AD
+arrb to AB
+arrc to AC
+@input
+@result
+0.000000
+5.200000
+3.140000
+false
+true
+help
+
+@end

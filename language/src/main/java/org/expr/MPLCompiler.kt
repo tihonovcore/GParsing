@@ -11,6 +11,7 @@ import java.io.BufferedWriter
 import java.io.OutputStreamWriter
 
 import org.tihonovcore.utils.Early
+import java.nio.file.Paths
 
 @Early
 class MPLCompiler {
@@ -18,11 +19,12 @@ class MPLCompiler {
 
     fun evaluate(source: String, input: List<Any> = emptyList()): String {
         val (c, typeMap) = generateC(source)
+        println(c)
         lastTypeMap = typeMap
 
         val path = "c_out.out" //TODO: create tmp file
         compileC(c, path)
-        return runC(path, input)
+        return runC(path, input).also { Files.delete(Paths.get(path)) }
     }
 
     fun generateC(source: String): Pair<String, Map<String, String>> {

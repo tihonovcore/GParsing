@@ -373,6 +373,8 @@ factor returns [String type] :
     MINUS factor {
         $type = ti.get("-" + $factor.type);
     }
+    |
+    STRINGVALUE { $type = "S"; }
     ;
 
 get [String recieverType] returns [String type] :
@@ -407,12 +409,16 @@ declaration :
                 idToType.put($ID.getText(), $readWithType.type);
             }
             |
-            string {
+            STRINGVALUE {
                 idToType.put($ID.getText(), "S");
             }
             |
             array {
                 idToType.put($ID.getText(), $array.type);
+            }
+            |
+            concat {
+                idToType.put($ID.getText(), $concat.type);
             }
         )
     )
@@ -443,14 +449,18 @@ assingmnet :
                 throw new IllegalStateException("Wrong types");
         }
         |
-        string {
+        STRINGVALUE {
             if (NOTEQ(idToType.get($ID.getText()), "S"))
                 throw new IllegalStateException("Wrong types");
-            idToType.put($ID.getText(), "S");
         }
         |
         array {
             if (NOTEQ(idToType.get($ID.getText()), $array.type))
+                throw new IllegalStateException("Wrong types");
+        }
+        |
+        concat {
+            if (NOTEQ(idToType.get($ID.getText()), $concat.type))
                 throw new IllegalStateException("Wrong types");
         }
     )
@@ -464,13 +474,42 @@ array returns [String type] :
     }
     ;
 
-string :
-    STRINGVALUE | concat
-    ;
+concat returns [String ltype, String rtype, String type]:
+    CONCAT
+    LBRACKET
+        (ID { $ltype = idToType.get($ID.getText()); } | STRINGVALUE { $ltype = "S"; } | array { $ltype = $array.type; })
+        COMMA
+        (ID { $rtype = idToType.get($ID.getText()); } | STRINGVALUE { $rtype = "S"; } | array { $rtype = $array.type; })
+    RBRACKET {
+        String result = "";
 
-concat :
-    CONCAT LBRACKET (ID | STRINGVALUE | array) COMMA (ID | STRINGVALUE | array) RBRACKET {
-        //TODO: expected left.type == right.type
+        if ($ltype.equals($rtype)) {
+            $type = $ltype;
+            result = "OK";
+        }
+
+        if ($ltype.equals("C") && $rtype.equals("S") || $ltype.equals("S") && $rtype.equals("C")) {
+            $type = "S";
+            result = "OK";
+        }
+
+        if ($ltype.startsWith("A")) {
+            String ltypeParameter = $ltype.substring(1, $ltype.length());
+            if (ltypeParameter.equals($rtype)) {
+                $type = $ltype;
+                result = "OK";
+            }
+        }
+
+        if ($rtype.startsWith("A")) {
+            String rtypeParameter = $rtype.substring(1, $rtype.length());
+            if (rtypeParameter.equals($rtype)) {
+                $type = $rtype;
+                result = "OK";
+            }
+        }
+
+        if (NOTEQ(result, "OK")) throw new IllegalArgumentException("Incompatible type in `concat`");
     }
     ;
 

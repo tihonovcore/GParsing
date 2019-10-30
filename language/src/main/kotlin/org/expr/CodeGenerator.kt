@@ -12,6 +12,10 @@ class CodeGenerator(
     private val result = StringBuilder()
     private var indent = StringBuilder()
 
+    private val functionGenerator = FunctionGenerator()
+
+    private var currentVariable = ""
+
     private var indentFlag = true
 
     private fun <T> add(v: T) {
@@ -35,101 +39,11 @@ class CodeGenerator(
     }
 
     fun gen(): String {
-        addln("#include <stdio.h>")
-        addln("#include <stdbool.h>")
-        addln("#include <stdlib.h>")
-        addln("#include <string.h>")
-        addln()
-        addln("""
-            |int readInt() {
-            |    int t;
-            |    scanf("%d", &t);
-            |    return t;
-            |}
-        """.trimMargin())
-        addln()
-        addln("""
-            |bool readBool() {
-            |    int t;
-            |    scanf("%d", &t);
-            |    return t;
-            |}
-        """.trimMargin())
-        addln()
-        addln("""
-            |char readChar() {
-            |    char t;
-            |    scanf("%c", &t);
-            |    return t;
-            |}
-        """.trimMargin())
-        addln()
-        addln("""
-            |long long readLong() {
-            |    long long t;
-            |    scanf("%lld", &t);
-            |    return t;
-            |}
-        """.trimMargin())
-        addln()
-        addln("""
-            |double readDouble() {
-            |    double t;
-            |    scanf("%lf", &t);
-            |    return t;
-            |}
-        """.trimMargin())
-        addln()
-        addln("""
-            |char* readLine() {
-            |    static char t[256];
-            |    fgets(t, 256, stdin);
-            |    return t;
-            |}
-        """.trimMargin())
-        addln()
-        addln("""
-            |char* readString() {
-            |    static char t[256];
-            |    scanf("%s", &t);
-            |    return t;
-            |}
-        """.trimMargin())
-        addln()
-        addln("""
-            |char* concat(char* x, char* y) {
-            |    int len = strlen(x) + strlen(y) + 1;
-            |    char* t = malloc(len);
-            |    strcat(t, x);
-            |    strcat(t, y);
-            |    return t;
-            |}
-        """.trimMargin())
-        addln()
-        addln("""
-            |char* assign(char* x, char* y) {
-            |    free(x);
-            |    return strdup(y);
-            |}
-        """.trimMargin())
-        addln()
-        addln("""
-            |int* assignArray(int* x, int* y, int* x_size, int* y_size) {
-            |    free(x);
-            |    *x_size = *y_size;
-            |    x = malloc(*y_size * sizeof(int));
-            |    for (int i = 0; i < *y_size; i++) {
-            |         x[i] = y[i];
-            |    }
-            |    return x;
-            |}
-        """.trimMargin())
-        addln()
         addln("int main() {")
         indent.append("    ")
 
         parser.idToType.keys.filter { parser.idToType[it]?.startsWith("A") ?: false }.forEach {
-            addln("int ${it}_size;")
+            addln("int ${it}_size = 0;")
         }
         addln()
 
@@ -139,7 +53,7 @@ class CodeGenerator(
         addln()
         parser.idToType.keys.filter {
             val type = parser.idToType[it].orEmpty()
-            type.startsWith("A") || it == "S"
+            type.startsWith("A") || type == "S"
         }.forEach {
             addln("free($it);")
         }
@@ -148,7 +62,22 @@ class CodeGenerator(
 
         addln("}")
 
-        return result.toString()
+        val resultWithLibraries = StringBuilder()
+        resultWithLibraries.append("#include <stdio.h>").append(System.lineSeparator())
+        resultWithLibraries.append("#include <stdbool.h>").append(System.lineSeparator())
+        resultWithLibraries.append("#include <stdlib.h>").append(System.lineSeparator())
+        resultWithLibraries.append("#include <string.h>").append(System.lineSeparator())
+
+        resultWithLibraries.append(System.lineSeparator())
+        functionGenerator.prototypes.forEach {
+            resultWithLibraries.append(it).append(System.lineSeparator())
+        }
+        resultWithLibraries.append(System.lineSeparator())
+
+        resultWithLibraries.append(result.toString())
+        resultWithLibraries.append(functionGenerator.definitions)
+
+        return resultWithLibraries.toString()
     }
 
     override fun visitRead(ctx: ExprParser.ReadContext?) {
@@ -156,7 +85,9 @@ class CodeGenerator(
 
         visit(ctx.ID())
         add(" = ")
-        when (parser.idToType[ctx.ID().text]) {
+
+        val type = parser.idToType[ctx.ID().text]
+        when (type) {
             "I" -> add("readInt()")
             "B" -> add("readBool()")
             "C" -> add("readChar()")
@@ -164,6 +95,10 @@ class CodeGenerator(
             "D" -> add("readDouble()")
             "S" -> add("readString()")
         }
+
+        if (type != "S") functionGenerator.simpleRead(primitiveTypeMapper[type]!!)
+        else functionGenerator.stringRead(FunctionGenerator.StringType.STRING)
+
         addln(";")
     }
 
@@ -171,74 +106,80 @@ class CodeGenerator(
         require(ctx != null)
         super.visitReadWithType(ctx)
         add("()")
+
+        val type = ctx.children.single().text.drop(4)
+        when (type) {
+            "Line" -> functionGenerator.stringRead(FunctionGenerator.StringType.LINE)
+            "String" -> functionGenerator.stringRead(FunctionGenerator.StringType.STRING)
+            else -> functionGenerator.simpleRead(primitiveTypeMapper[ctx.type]!!)
+        }
+    }
+
+    private fun commonPrint(type: String, array: String = "", nl: String, visit: () -> Unit) {
+        if (type.startsWith("A")) {
+            val typeParameter = type.drop(1)
+            val template = when(typeParameter) {
+                "I" -> "\"%d\""
+                "B" -> "\"%d\""
+                "C" -> "\"%c\""
+                "D" -> "%lf\""
+                "L" -> "%lld\""
+                else -> throw IllegalStateException("CODEGEN: unexpected type - $typeParameter")
+            }
+
+            addln("printf(\"[\");")
+            addln("for (int i = 0; i < ${array}_size; i++) {")
+
+            if (typeParameter != "B") addln("    printf($template, $array[i]);")
+            else addln("    printf($template, $array[i] ? \"true\" : \"false\");")
+            addln("    if (i + 1 != ${array}_size) printf(\", \");")
+            addln("}")
+            addln("printf(\"]$nl\");")
+        } else {
+            add("printf(")
+            when (type) {
+                "I" -> {
+                    add("\"%d$nl\", ")
+                    visit()
+                }
+                "B" -> {
+                    add("(")
+                    visit()
+                    add(") ? \"true$nl\" : \"false$nl\"")
+                }
+                "C" -> {
+                    add("\"%c$nl\", ")
+                    visit()
+                }
+                "D" -> {
+                    add("\"%lf$nl\", ")
+                    visit()
+                }
+                "L" -> {
+                    add("\"%lld$nl\", ")
+                    visit()
+                }
+                "S" -> {
+                    add("\"%s$nl\", ")
+                    visit()
+                }
+            }
+            addln(");")
+        }
     }
 
     override fun visitPrintln(ctx: ExprParser.PrintlnContext?) {
         require(ctx != null)
 
-        add("printf(")
-        when (ctx.general().type) {
-            "I" -> {
-                add("\"%d\\n\", ")
-                visit(ctx.general())
-            }
-            "B" -> {
-                add("(")
-                visit(ctx.general())
-                add(") ? \"true\\n\" : \"false\\n\"")
-            }
-            "C" -> {
-                add("\"%c\\n\", ")
-                visit(ctx.general())
-            }
-            "D" -> {
-                add("\"%lf\\n\", ")
-                visit(ctx.general())
-            }
-            "L" -> {
-                add("\"%lld\\n\", ")
-                visit(ctx.general())
-            }
-            "S" -> {
-                add("\"%s\\n\", ")
-                visit(ctx.general())
-            }
-        }
-        addln(");")
+        fun visit() { visit(ctx.general()) }
+        commonPrint(ctx.general().type, ctx.general().text, "\\n", ::visit)
     }
 
     override fun visitPrint(ctx: ExprParser.PrintContext?) {
         require(ctx != null)
 
-        add("printf(")
-        when (ctx.general().type) {
-            "I" -> {
-                add("\"%d\", ")
-                visit(ctx.general())
-            }
-            "B" -> {
-                add("(")
-                visit(ctx.general())
-                add(") ? \"true\" : \"false\"")
-            }
-            "C" -> {
-                add("\"%c\", ")
-                visit(ctx.general())
-            }
-            "D" -> {
-                add("\"%lf\", ")
-                visit(ctx.general())
-            }
-            "L" -> {
-                add("\"%lld\", ")
-                visit(ctx.general())
-            }
-            "S" -> {
-                add("\"%s\", ")
-                visit(ctx.general())
-            }
-        }
-        addln(");")
+        fun visit() { visit(ctx.general()) }
+        commonPrint(ctx.general().type, ctx.general().text, "", ::visit)
     }
 
     //HACK
@@ -252,11 +193,11 @@ class CodeGenerator(
         add(primitiveTypeMapper[ctx.type])
     }
 
-    //TODO: clear code
     override fun visitAssingmnet(ctx: ExprParser.AssingmnetContext?) {
         require(ctx != null)
 
-        visit(ctx.children[0])
+        val variable = ctx.children[0].also { currentVariable = it.text }
+        visit(variable)
 
         if (ctx.children[1] is ExprParser.GetContext) {
             visit(ctx.children[1])
@@ -267,34 +208,33 @@ class CodeGenerator(
         } else {
             add(" = ")
 
-            if (ctx.children[2] is ExprParser.StringContext || (ctx.children[2] as ExprParser.GeneralContext).type == "S") { //is String
-                if (ctx.children[2] is ExprParser.GeneralContext) { //если это не general, то "asd"
-                    add("assign(")
-                    visit(ctx.children[0])
-                    add(", ")
-                    visit(ctx.children[2])
-                    add(")")
-                } else { //"sdf"
-                    add("strdup(")
-                    visit(ctx.children[2])
-                    add(")")
-                }
-            } else {
-                if (ctx.general.type.startsWith("A")) {
-                    add("assignArray(")
-                    visit(ctx.children[0])
-                    add(", ")
-                    visit(ctx.children[2])
-                    add(", &")
-                    visit(ctx.children[0])
-                    add("_size")
-                    add(", &")
-                    visit(ctx.children[2])
-                    add("_size")
-                    add(")")
-                } else {
-                    visit(ctx.children[2])
-                }
+            val value = ctx.children[2]
+            if (value is ExprParser.GeneralContext && value.type == "S") { //variable with type String
+                add("assign(").also { functionGenerator.stringAssign() }
+                visit(variable)
+                add(", ")
+                visit(value)
+                add(")")
+            } else if (value is ExprParser.StringContext) { //new constant string like "str"
+                add("strdup(")
+                visit(value)
+                add(")")
+            } else if (value.text.startsWith("concat")) { //x = concat(a, b); //TODO: rm dirty hack
+                visit(value)
+            } else if (ctx.general.type.startsWith("A")) { //array
+                add("assignArray(").also { functionGenerator.arrayAssign(ctx.general.type.arrayTypeMapper()) }
+                visit(variable)
+                add(", ")
+                visit(value)
+                add(", &")
+                visit(variable)
+                add("_size")
+                add(", &")
+                visit(value)
+                add("_size")
+                add(")")
+            } else { //expression
+                visit(value)
             }
             addln(";")
         }
@@ -303,18 +243,40 @@ class CodeGenerator(
     override fun visitConcat(ctx: ExprParser.ConcatContext?) {
         require(ctx != null)
 
-        add("concat(")
-        visit(ctx.children[2]) //first
-        add(", ")
-        visit(ctx.children[4]) //second
-        add(")")
+        val left = ctx.children[2]
+        val ltype = ctx.ltype
+        val right = ctx.children[4]
+        val rtype = ctx.rtype
+
+        if (ltype == rtype && ltype == "S") {
+            add("concat(").also { functionGenerator.stringConcat() }
+            visit(left)
+            add(", ")
+            visit(right)
+            add(")")
+        } else if (ltype == rtype) { //arrays
+            add("concat(").also { functionGenerator.arrayConcat(ltype.arrayTypeMapper()) }
+            visit(left)
+            add(", ")
+            visit(right)
+            add(", $currentVariable")
+            add(", ")
+            visit(left)
+            add("_size, ")
+            visit(right)
+            add("_size, &")
+            add(currentVariable)
+            add("_size")
+            add(")")
+        } else {
+            //TODO: s + c, c + s, at + t, t + at
+        }
     }
 
-    //TODO: clear code
     override fun visitDeclaration(ctx: ExprParser.DeclarationContext?) {
         require(ctx != null)
 
-        val name = ctx.children[1].text
+        val name = ctx.children[1].text.also { currentVariable = it }
         val typeTemplate = parser.idToType[name].orEmpty() //TODO: what if type == null?
         val type = primitiveTypeMapper[typeTemplate] ?: typeTemplate.arrayTypeMapper()
 
@@ -322,27 +284,39 @@ class CodeGenerator(
         add(" ")
         add(name)
 
-        when (ctx.children[2].text) {
+        val action = ctx.children[2].text
+        val value = ctx.children[3]
+        when (action) {
             "=" -> {
                 add(" = ")
-                if (type == "char*") {
-                    if (ctx.children[3] is TerminalNode) { //terminal
-                        val string = ctx.children[3].text.drop(1).dropLast(1) //rm '"'
+                if (type == "char*") { //string
+                    if (value is TerminalNode) { //terminal
+                        val string = value.text.drop(1).dropLast(1) //rm '"'
                         addln("malloc(${string.length} + 1);")
                         add("strcpy($name, \"$string\")")
-                    } else if (ctx.children[3] is ExprParser.ConcatContext?) {
-                        visit(ctx.children[3])
+                    } else if (value.text.startsWith("concat")) { //def x = concat(a, b); //TODO: rm dirty hack
+                        visit(value)
                     } else { //nonterminal
                         add("strdup(")
-                        visit(ctx.children[3])
+                        visit(value)
                         add(")")
                     }
                 } else {
-                    visit(ctx.children[3])
-                    if (ctx.array != null) {
+                    if (ctx.array != null) { //new array
+                        visit(value)
                         addln(";")
                         add("${name}_size = ")
                         visit(ctx.array.children[2])
+                    } else if (value.text.startsWith("concat")) { //def x = concat(a, b); //TODO: rm dirty hack
+                        visit(value)
+                    } else if (parser.idToType[name]!!.startsWith("A")) { //copy array
+                        add("assignArray($name, ").also { functionGenerator.arrayAssign(parser.idToType[name]!!.arrayTypeMapper()) }
+                        visit(value)
+                        add(", &${name}_size, &")
+                        visit(value)
+                        add("_size)")
+                    } else { //value is not array
+                        visit(value)
                     }
                 }
                 addln(";")

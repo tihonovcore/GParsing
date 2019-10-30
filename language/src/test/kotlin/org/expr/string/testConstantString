@@ -1,0 +1,9 @@
+@code
+def x = "Hello";
+x = "World";
+
+@types
+@input
+@result
+
+@end

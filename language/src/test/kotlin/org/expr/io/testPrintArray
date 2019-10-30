@@ -1,0 +1,15 @@
+@code
+def arr = Array[Int](4);
+arr[0] = 4;
+arr[1] = 7;
+arr[2] = 2;
+arr[3] = 11;
+
+print arr;
+
+@types
+@input
+@result
+[4, 7, 2, 11]
+
+@end
