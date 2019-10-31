@@ -1,0 +1,37 @@
+@code
+fun equals(a: Array[Int], b: Array[Int], aSize: Int, bSize: Int): Bool {
+    if (aSize != bSize) return false;
+
+    def i = 0;
+    while (i < aSize) {
+        if (a[i] != b[i]) {
+            return false;
+        }
+
+        i = i + 1;
+    }
+
+    return true;
+}
+
+def x = Array[Int](4);
+def y = Array[Int](4);
+
+x[0] = 1;
+x[1] = 8;
+x[2] = 7;
+x[3] = 15;
+
+y[0] = 1;
+y[1] = 8;
+y[2] = 7;
+y[3] = 15;
+
+print equals(x, y, 4, 4);
+
+@types
+@input
+@result
+true
+
+@end

@@ -32,8 +32,8 @@ class MPLCompiler {
         val tokens = CommonTokenStream(lexer)
         val parser = ExprParser(tokens)
 
-        val codeGenerator = CodeGenerator(parser, parser.statement())
-        return Pair(codeGenerator.gen(), parser.idToType)
+        val codeGenerator = CodeGenerator(parser, parser.file())
+        return Pair(codeGenerator.gen(), parser.current.first())
     }
 
     fun compileC(source: String, outPath: String) {
@@ -59,7 +59,7 @@ class MPLCompiler {
         var evaluationResult = ""
         while (true) {
             val line = reader.readLine() ?: break
-            evaluationResult += line + "\n"
+            evaluationResult += line.dropLastWhile { it == ' ' } + "\n"
         }
 
         return evaluationResult

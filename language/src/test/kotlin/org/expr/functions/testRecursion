@@ -1,0 +1,31 @@
+@code
+fun fact(n: Int): Int {
+    if (n > 0) return n * (fact(n - 1));
+    else return 1;
+}
+
+println fact(5);
+println fact(4);
+println fact(3);
+
+fun sum(a: Int, b: Int): Int {
+    if (a > 0) return 1 + sum(a - 1, b);
+    else if (b > 0) return 1 + sum(a, b - 1);
+    else return 0;
+}
+
+println sum(3, 4);
+println sum(14, 2);
+println sum(9, 16);
+
+@types
+@input
+@result
+120
+24
+6
+7
+16
+25
+
+@end

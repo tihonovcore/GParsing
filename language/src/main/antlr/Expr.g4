@@ -9,7 +9,63 @@ static boolean NOTEQ(String a, String b) {
     return !a.equals(b);
 }
 
+int head = 0;
+private List<Map<String, String>> parent = new ArrayList<>() {{
+    add(new HashMap<>());
+}};
+public List<Map<String, String>> current = new ArrayList<>() {{
+    add(new HashMap<>());
+}};
+public List<Map.Entry<String, String>> declarations = new ArrayList<>();
+
+String getType(String id) {
+    Map<String, String> myParent = parent.get(head);
+    Map<String, String> myCurrent = current.get(head);
+
+    if (myCurrent.containsKey(id)) {
+        return myCurrent.get(id);
+    }
+
+    if (myParent.containsKey(id)) {
+        return myParent.get(id);
+    }
+
+    throw new IllegalArgumentException("Undefined variable: " + id);
+}
+
+void setType(String id, String type) {
+    Map<String, String> myCurrent = current.get(head);
+    if (myCurrent.containsKey(id)) {
+        throw new IllegalArgumentException("Redefinition variable: " + id);
+    }
+
+    myCurrent.put(id, type);
+    declarations.add(Map.entry(id, type));
+}
+
+void newScope() {
+    Map<String, String> newParent = new HashMap<>(parent.get(head));
+    for (String key : current.get(head).keySet()) {
+        newParent.put(key, current.get(head).get(key));
+    }
+
+    head++;
+    current.add(new HashMap<>());
+    parent.add(newParent);
+}
+
+void outOfScope() {
+    current.remove(head);
+    parent.remove(head);
+    head--;
+}
+
 public Map<String, String> idToType = new HashMap<>();
+private Map<String, String> definedFunctions = new HashMap<>();
+
+private String currentReturnType = "U";
+private boolean returnExistsFlag = false;
+private int insideWhileBlock = 0;
 
 static Map<String, String> ti = new HashMap<>();
 static {
@@ -182,7 +238,29 @@ static {
 }
 }
 
-statement : ((declaration | assingmnet | ioStatement) SEMICOLON)+;
+file :
+    (statement | function)*
+    ;
+
+statement :
+    (
+        declaration
+        |
+        assingmnet
+        |
+        ioStatement
+        |
+        jumpStatement
+        |
+        returnStatement[currentReturnType]
+        |
+        id_call
+    ) SEMICOLON
+    |
+    ifStatement
+    |
+    whileStatement
+    ;
 
 ioStatement : print | println | read;
 
@@ -250,7 +328,7 @@ compExpr returns [String type] :
     }
     |
     ID {
-        $type = idToType.get($ID.getText());
+        $type = getType($ID.getText());
     }
     |
     arithExpr {
@@ -324,13 +402,14 @@ term returns [String type] :
 factor returns [String type] :
     ID {
         //NOTE: it can be String
-        if (idToType.get($ID.getText()) == "B") //char? //TODO: EQEQ
-            throw new IllegalStateException("Wrong type"); //точно?
-        $type = idToType.get($ID.getText());
+        //if (idToType.get($ID.getText()) == "B")
+        //    throw new IllegalStateException("Wrong type");
+
+        $type = getType($ID.getText());
     }
     (
         get[$type] {
-            String recieverType = idToType.get($ID.getText());
+            String recieverType = getType($ID.getText());
             if (recieverType == "S") { //TODO: EQEQ
                 $type = "C";
             } else if (recieverType.startsWith("A")) {
@@ -338,6 +417,10 @@ factor returns [String type] :
             } else {
                 throw new IllegalStateException("Expected Iterable type");
             }
+        }
+        |
+        call[$ID.getText()] {
+            $type = $call.type;
         }
     )?
     |
@@ -391,34 +474,32 @@ get [String recieverType] returns [String type] :
     ;
 
 declaration :
-    DEF ID {
-        if (idToType.containsKey($ID.getText())) throw new IllegalStateException("Redeclaration");
-    }
+    DEF ID
     (
         COLON typeID {
-            idToType.put($ID.getText(), $typeID.type);
+            setType($ID.getText(), $typeID.type);
         }
         |
         ASSIGN
         (
             general {
-                idToType.put($ID.getText(), $general.type);
+                setType($ID.getText(), $general.type);
             }
             |
             readWithType {
-                idToType.put($ID.getText(), $readWithType.type);
+                setType($ID.getText(), $readWithType.type);
             }
             |
             STRINGVALUE {
-                idToType.put($ID.getText(), "S");
+                setType($ID.getText(), "S");
             }
             |
             array {
-                idToType.put($ID.getText(), $array.type);
+                setType($ID.getText(), $array.type);
             }
             |
             concat {
-                idToType.put($ID.getText(), $concat.type);
+                setType($ID.getText(), $concat.type);
             }
         )
     )
@@ -427,8 +508,8 @@ declaration :
 assingmnet :
     ID
     (
-        get[idToType.get($ID.getText())] {
-            String recieverType = idToType.get($ID.getText());
+        get[getType($ID.getText())] {
+            String recieverType = getType($ID.getText());
             if (NOTEQ(recieverType, "S") && !recieverType.startsWith("A"))
                 throw new IllegalStateException("Expected Iterable type");
         }
@@ -439,28 +520,28 @@ assingmnet :
             if (_localctx.get != null) {
                 if (NOTEQ($get.type, $general.type))
                     throw new IllegalStateException("Wrong types");
-            } else if (NOTEQ(idToType.get($ID.getText()), $general.type)) {
+            } else if (NOTEQ(getType($ID.getText()), $general.type)) {
                 throw new IllegalStateException("Wrong types");
             }
         }
         |
         readWithType {
-            if (idToType.get($ID.getText()) != $readWithType.type)
+            if (getType($ID.getText()) != $readWithType.type)
                 throw new IllegalStateException("Wrong types");
         }
         |
         STRINGVALUE {
-            if (NOTEQ(idToType.get($ID.getText()), "S"))
+            if (NOTEQ(getType($ID.getText()), "S"))
                 throw new IllegalStateException("Wrong types");
         }
         |
         array {
-            if (NOTEQ(idToType.get($ID.getText()), $array.type))
+            if (NOTEQ(getType($ID.getText()), $array.type))
                 throw new IllegalStateException("Wrong types");
         }
         |
         concat {
-            if (NOTEQ(idToType.get($ID.getText()), $concat.type))
+            if (NOTEQ(getType($ID.getText()), $concat.type))
                 throw new IllegalStateException("Wrong types");
         }
     )
@@ -477,9 +558,9 @@ array returns [String type] :
 concat returns [String ltype, String rtype, String type]:
     CONCAT
     LBRACKET
-        (ID { $ltype = idToType.get($ID.getText()); } | STRINGVALUE { $ltype = "S"; } | array { $ltype = $array.type; })
+        (ID { $ltype = getType($ID.getText()); } | STRINGVALUE { $ltype = "S"; } | array { $ltype = $array.type; })
         COMMA
-        (ID { $rtype = idToType.get($ID.getText()); } | STRINGVALUE { $rtype = "S"; } | array { $rtype = $array.type; })
+        (ID { $rtype = getType($ID.getText()); } | STRINGVALUE { $rtype = "S"; } | array { $rtype = $array.type; })
     RBRACKET {
         String result = "";
 
@@ -549,6 +630,120 @@ typeID returns [String type] :
     ARRAY SqLB typeID SqRB { $type = "A" + $typeID.type; }
     ;
 
+ifStatement :
+    IF LBRACKET general RBRACKET { newScope(); } (statement | body) { outOfScope(); } {
+        if (NOTEQ($general.type, "B"))
+            throw new IllegalArgumentException("Expected Bool");
+    }
+    (
+        ELSE { newScope(); } (statement | body) { outOfScope(); }
+    )?
+    ;
+
+body :
+    OpenBlockBrace statement* CloseBlockBrace
+    ;
+
+whileStatement :
+    WHILE LBRACKET general RBRACKET { insideWhileBlock++; } { newScope(); } (statement | body) { outOfScope(); } {
+        insideWhileBlock--;
+
+        if (NOTEQ($general.type, "B"))
+            throw new IllegalArgumentException("Expected Bool");
+        }
+    ;
+
+function :
+    FUN ID LBRACKET { newScope(); } functionArguments RBRACKET
+    returnType {
+        currentReturnType = $returnType.type;
+
+        String signature = $ID.getText() + "#" + $functionArguments.types;
+
+        if (definedFunctions.containsKey(signature)) {
+            throw new IllegalStateException("Redefinition function");
+        }
+        definedFunctions.put(signature, $returnType.type);
+    }
+    body {
+        if (NOTEQ($returnType.type, "U") && !returnExistsFlag) {
+            throw new IllegalArgumentException("Return missed");
+        }
+
+        returnExistsFlag = false;
+        currentReturnType = "U";
+    } { outOfScope(); }
+    ;
+
+returnType returns [String type]:
+    (COLON typeID)? {
+        if (_localctx.typeID == null) {
+            $type = "U";
+        } else {
+            $type = $typeID.type;
+        }
+    }
+    ;
+
+functionArguments returns [String types]:
+    (
+        ID COLON typeID { $types = $typeID.type; setType($ID.getText(), $typeID.type); }
+        (COMMA ID COLON typeID { $types += "_" + $typeID.type; setType($ID.getText(), $typeID.type); })*
+    )?
+    ;
+
+returnStatement [String expectedType] :
+    RETURN
+    (
+        general
+    )? {
+        returnExistsFlag = true;
+
+        if (_localctx.general == null) {
+            if (NOTEQ($expectedType, "U")) {
+                throw new IllegalArgumentException("Expected expression");
+            }
+        } else {
+            if (NOTEQ($expectedType, $general.type)) {
+                throw new IllegalArgumentException("Unexpected type: " + $general.type + ", should be " + $expectedType);
+            }
+        }
+    }
+    ;
+
+id_call :
+    ID call[$ID.getText()]
+    ;
+
+call [String id] returns [String type] :
+    LBRACKET arguments RBRACKET {
+        String signature = id + "#" + $arguments.types;
+        String returnType = definedFunctions.get(signature);
+
+        if (returnType == null) {
+            throw new IllegalArgumentException("Undefined function: " + signature);
+        }
+
+        $type = returnType;
+    }
+    ;
+
+arguments returns [String types]: //TODO: rename to callArgumnets
+    (
+        general { $types = $general.type; }
+        (COMMA general { $types += "_" + $general.type; })*
+    )?
+    ;
+
+jumpStatement :
+    CONTINUE | BREAK {
+        if (insideWhileBlock == 0) {
+            throw new IllegalArgumentException("Unexpected jump statement");
+        }
+    }
+    ;
+
+
 
 
 NUMBER : [0-9]+;
@@ -562,6 +757,8 @@ LBRACKET     : '(';
 RBRACKET     : ')';
 SqLB : '[';
 SqRB : ']';
+OpenBlockBrace : '{';
+CloseBlockBrace : '}';
 
 EQUALSEQUALS : '==';
 NOTEQUALS : '!=';
@@ -598,7 +795,16 @@ DOUBLE : 'Double';
 STRING : 'String';
 ARRAY : 'Array';
 
+IF : 'if';
+ELSE : 'else';
+WHILE : 'while';
+
 DEF : 'def';
+FUN : 'fun';
+
+BREAK : 'break';
+CONTINUE : 'continue';
+RETURN : 'return';
 
 CONCAT : 'concat';
 

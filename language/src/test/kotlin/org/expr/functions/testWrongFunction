@@ -1,0 +1,14 @@
+@code
+fun WHILETRUE(): Array[Int] {
+    def a = Array[Int](3);
+    if (10 > 100) return a;
+}
+
+def x = WHILETRUE();
+print x;
+
+@types
+@input
+@result
+
+@end

@@ -4,12 +4,15 @@ import org.antlr.v4.runtime.tree.TerminalNode
 import org.expr.gen.ExprBaseVisitor
 import org.expr.gen.ExprParser
 import java.lang.StringBuilder
+import java.util.HashMap
 
 class CodeGenerator(
     private val parser: ExprParser,
-    private val node: ExprParser.StatementContext
+    private val node: ExprParser.FileContext
 ) : ExprBaseVisitor<Unit>() {
     private val result = StringBuilder()
+    private val functionResult = StringBuilder()
+    private var defaultOut = result
     private var indent = StringBuilder()
 
     private val functionGenerator = FunctionGenerator()
@@ -20,12 +23,12 @@ class CodeGenerator(
 
     private fun <T> add(v: T) {
         setIndent()
-        result.append(v)
+        defaultOut.append(v)
     }
 
     private fun <T> addln(v: T) {
         setIndent()
-        result.append(v).append(System.lineSeparator())
+        defaultOut.append(v).append(System.lineSeparator())
         indentFlag = true
     }
 
@@ -34,25 +37,72 @@ class CodeGenerator(
     private fun setIndent() {
         if (indentFlag) {
             indentFlag = false
-            result.append(indent)
+            defaultOut.append(indent)
         }
     }
 
-    fun gen(): String {
-        addln("int main() {")
-        indent.append("    ")
+    //////////////////////////////////////////////////////
 
-        parser.idToType.keys.filter { parser.idToType[it]?.startsWith("A") ?: false }.forEach {
-            addln("int ${it}_size = 0;")
+    private var head = 0
+    private val parent = mutableListOf<MutableMap<String, String>>(mutableMapOf())
+    private val current = mutableListOf<MutableMap<String, String>>(mutableMapOf())
+
+    private fun getType(id: String): String {
+        val myParent = parent[head]
+        val myCurrent = current[head]
+
+        if (myCurrent.containsKey(id)) {
+            return myCurrent[id]!!
         }
-        addln()
 
+        if (myParent.containsKey(id)) {
+            return myParent[id]!!
+        }
+
+        throw IllegalArgumentException("Undefined variable: $id")
+    }
+
+    private fun setType(id: String, type: String) {
+        val myCurrent = current[head]
+        require(!myCurrent.containsKey(id)) { "Redefinition variable: $id" }
+
+        myCurrent[id] = type
+    }
+
+    private fun newScope() {
+        val newParent = HashMap(parent[head])
+        for (key in current[head].keys) {
+            newParent[key] = current[head][key]
+        }
+
+        head++
+        current.add(mutableMapOf())
+        parent.add(newParent)
+    }
+
+    private fun outOfScope() {
+        current.removeAt(head)
+        parent.removeAt(head)
+        head--
+    }
+
+    private var nextDeclarationPosition = 0;
+    private fun addNewDeclaration() {
+        val pair = parser.declarations[nextDeclarationPosition]
+        nextDeclarationPosition++
+        setType(pair.key, pair.value)
+    }
+
+    //////////////////////////////////////////////////////
+
+    fun gen(): String {
+        indent.append("    ")
         //main code
         node.accept(this)
 
         addln()
-        parser.idToType.keys.filter {
-            val type = parser.idToType[it].orEmpty()
+        current[head].keys.filter { //TODO: why head?
+            val type = getType(it)
             type.startsWith("A") || type == "S"
         }.forEach {
             addln("free($it);")
@@ -74,6 +124,18 @@ class CodeGenerator(
         }
         resultWithLibraries.append(System.lineSeparator())
 
+        resultWithLibraries.append(functionResult)
+        resultWithLibraries.append(System.lineSeparator())
+
+        resultWithLibraries.append("int main() {")
+        resultWithLibraries.append(System.lineSeparator())
+
+        current[head].keys.filter { getType(it).startsWith("A") }.forEach {
+            resultWithLibraries.append("    int ${it}_size = 0;")
+            resultWithLibraries.append(System.lineSeparator())
+        }
+        resultWithLibraries.append(System.lineSeparator())
+
         resultWithLibraries.append(result.toString())
         resultWithLibraries.append(functionGenerator.definitions)
 
@@ -86,7 +148,7 @@ class CodeGenerator(
         visit(ctx.ID())
         add(" = ")
 
-        val type = parser.idToType[ctx.ID().text]
+        val type = getType(ctx.ID().text)
         when (type) {
             "I" -> add("readInt()")
             "B" -> add("readBool()")
@@ -190,7 +252,8 @@ class CodeGenerator(
     override fun visitTypeID(ctx: ExprParser.TypeIDContext?) {
         require(ctx != null)
 
-        add(primitiveTypeMapper[ctx.type])
+        val type = primitiveTypeMapper[ctx.type]
+        add(type ?: ctx.type.arrayTypeMapper())
     }
 
     override fun visitAssingmnet(ctx: ExprParser.AssingmnetContext?) {
@@ -215,7 +278,7 @@ class CodeGenerator(
                 add(", ")
                 visit(value)
                 add(")")
-            } else if (value is ExprParser.StringContext) { //new constant string like "str"
+            } else if (value is TerminalNode && value.text.startsWith("\"")) { //new constant string like "str"
                 add("strdup(")
                 visit(value)
                 add(")")
@@ -276,8 +339,10 @@ class CodeGenerator(
     override fun visitDeclaration(ctx: ExprParser.DeclarationContext?) {
         require(ctx != null)
 
+        addNewDeclaration()
+
         val name = ctx.children[1].text.also { currentVariable = it }
-        val typeTemplate = parser.idToType[name].orEmpty() //TODO: what if type == null?
+        val typeTemplate = getType(name)
         val type = primitiveTypeMapper[typeTemplate] ?: typeTemplate.arrayTypeMapper()
 
         add(type)
@@ -309,8 +374,8 @@ class CodeGenerator(
                         visit(ctx.array.children[2])
                     } else if (value.text.startsWith("concat")) { //def x = concat(a, b); //TODO: rm dirty hack
                         visit(value)
-                    } else if (parser.idToType[name]!!.startsWith("A")) { //copy array
-                        add("assignArray($name, ").also { functionGenerator.arrayAssign(parser.idToType[name]!!.arrayTypeMapper()) }
+                    } else if (getType(name).startsWith("A")) { //copy array
+                        add("assignArray($name, ").also { functionGenerator.arrayAssign(getType(name).arrayTypeMapper()) }
                         visit(value)
                         add(", &${name}_size, &")
                         visit(value)
@@ -336,6 +401,139 @@ class CodeGenerator(
         add(" * ")
         visit(ctx.children[2])
         add(")")
+    }
+
+    override fun visitFunction(ctx: ExprParser.FunctionContext?) {
+        require(ctx != null)
+
+        newScope()
+
+        defaultOut = functionResult
+
+        val prevIndent = indent.length
+        indent.clear()
+
+        val name = ctx.ID()
+        val args = ctx.functionArguments
+        val body = ctx.body()
+        val returnType = ctx.returnType
+
+        visit(returnType)
+        add(" ")
+        visit(name)
+        add("(")
+        visit(args)
+        add(") ")
+        visit(body)
+
+        defaultOut = result
+        repeat(prevIndent) { indent.append(" ") }
+
+        outOfScope()
+    }
+
+    override fun visitFunctionArguments(ctx: ExprParser.FunctionArgumentsContext?) {
+        require(ctx != null)
+
+        if (ctx.childCount == 0) return
+
+        for (i in ctx.children.indices step 4) {
+            val name = ctx.children[i]
+            val type = ctx.children[i + 2]
+
+            visit(type)
+            add(" ")
+            visit(name)
+            if (i + 4 < ctx.childCount) add(", ") //has next argument
+
+            addNewDeclaration()
+        }
+    }
+
+    override fun visitReturnType(ctx: ExprParser.ReturnTypeContext?) {
+        require(ctx != null)
+
+        if (ctx.childCount == 0) add("void")
+        else visit(ctx.typeID)
+    }
+
+    override fun visitReturnStatement(ctx: ExprParser.ReturnStatementContext?) {
+        require(ctx != null)
+
+        visit(ctx.RETURN())
+        add(" ")
+        visit(ctx.general)
+        addln(";")
+    }
+
+    override fun visitId_call(ctx: ExprParser.Id_callContext?) {
+        super.visitId_call(ctx)
+        add(";")
+    }
+
+    override fun visitIfStatement(ctx: ExprParser.IfStatementContext?) {
+        require(ctx != null)
+
+        newScope()
+
+        visit(ctx.IF())
+        add(" ")
+        visit(ctx.LBRACKET())
+        add(" ")
+        visit(ctx.general())
+        add(" ")
+        visit(ctx.RBRACKET())
+        add(" ")
+        visit(ctx.children[4]) //if body
+
+        outOfScope()
+
+        if (ctx.childCount == 7) { //else case exists
+            newScope()
+
+            visit(ctx.ELSE())
+            add(" ")
+            visit(ctx.children[6]) //else body
+
+            outOfScope()
+        }
+    }
+
+    override fun visitBody(ctx: ExprParser.BodyContext?) {
+        require(ctx != null)
+
+        visit(ctx.OpenBlockBrace())
+        addln()
+
+        indent.append("    ")
+        ctx.statement().forEach { visit(it) }
+        indent.delete(indent.length - 4, indent.length)
+
+        visit(ctx.CloseBlockBrace())
+        addln()
+    }
+
+    override fun visitWhileStatement(ctx: ExprParser.WhileStatementContext?) {
+        require(ctx != null)
+
+        newScope()
+
+        visit(ctx.WHILE())
+        add(" ")
+        visit(ctx.LBRACKET())
+        add(" ")
+        visit(ctx.general())
+        add(" ")
+        visit(ctx.RBRACKET())
+        add(" ")
+        visit(ctx.body())
+
+        outOfScope()
+    }
+
+    override fun visitJumpStatement(ctx: ExprParser.JumpStatementContext?) {
+        super.visitJumpStatement(ctx)
+        addln(";")
     }
 
     private val primitiveTypeMapper = mapOf(

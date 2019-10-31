@@ -1,0 +1,25 @@
+@code
+def flag = true;
+
+def i = 0;
+while (i < 10) {
+    def t = readInt;
+    if (t * t > 256) {
+        flag = false;
+    }
+    i = i + 1;
+}
+
+if (flag) {
+    print "OK";
+} else {
+    print "FAIL";
+}
+
+@types
+@input
+8 9 10 15 16 4 2 3 7 13
+@result
+OK
+
+@end

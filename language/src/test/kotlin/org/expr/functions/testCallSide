@@ -1,0 +1,32 @@
+@code
+fun sum(a: Int, b: Int): Int {
+    return a + b;
+}
+
+def x = sum(4, 5);
+println x;
+
+println sum(4 * 5, 4);
+
+def q = sum(1, sum(sum(2, 3), 4));
+println q == 10;
+
+fun sayHello(name: String) {
+    def hello = concat("Hello, ", name);
+    println hello;
+}
+
+def name = readLine;
+sayHello(name);
+
+@types
+@input
+Kristen Stewart
+
+@result
+9
+24
+true
+Hello, Kristen Stewart
+
+@end

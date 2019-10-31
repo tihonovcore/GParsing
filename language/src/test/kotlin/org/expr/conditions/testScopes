@@ -1,0 +1,45 @@
+@code
+def x = 4;
+println x;
+
+def y = 7;
+println y;
+
+if (x < y) {
+    println x;
+    def x = "X less than Y";
+    println x;
+}
+
+def q = "Q";
+if (!(x > y)) {
+    def diff = 0;
+
+    println q;
+    def q = 4.78;
+    println q;
+    while (x != y) {
+        def q = y;
+        print q;
+
+        y = y - 1;
+        diff = diff + 1;
+    }
+
+    println "";
+    println diff;
+}
+
+@types
+@input
+@result
+4
+7
+4
+X less than Y
+Q
+4.780000
+765
+3
+
+@end

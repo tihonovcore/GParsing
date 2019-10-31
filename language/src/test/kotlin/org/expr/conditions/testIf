@@ -1,0 +1,23 @@
+@code
+def x = 9;
+if (x > 10) print 100;
+else if (x > 50) print 50;
+else print 0;
+
+
+print "_";
+
+if (x % 3 == 0) print 100;
+else print 200;
+
+print "_";
+
+if (x * x == 80) print x * x;
+else print x * x * x;
+
+@types
+@input
+@result
+0_100_729
+
+@end

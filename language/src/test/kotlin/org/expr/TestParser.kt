@@ -10,7 +10,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 abstract class TestParser : TestCase() {
-    @Early
     protected fun doTest(path: Path) {
         val lines = Files.readAllLines(path)
         val c = lines.indexOf("@code")
@@ -30,7 +29,6 @@ abstract class TestParser : TestCase() {
         doTest(code, input, expectedType, expectedResult)
     }
 
-    @Early
     protected fun doTest(
         sourceCode: String,
         input: List<Any>,
@@ -336,63 +334,48 @@ class TestVariables : TestParser() {
     }
 }
 
-@Early
 class TestIO : TestParser() {
-    @Test
-    fun testIO1() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
+    private fun doTest() {
+        super.doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
     }
 
     @Test
-    fun testIoWithTi() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
-    }
+    fun testIO1() = doTest()
 
     @Test
-    fun testIoWithTi_2() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
-    }
+    fun testIoWithTi() = doTest()
 
     @Test
-    fun testStringIO() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
-    }
+    fun testIoWithTi_2() = doTest()
 
     @Test
-    fun testStringIO2() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
-    }
+    fun testStringIO() = doTest()
 
     @Test
-    fun testPrintArray() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/io/$name"))
-    }
+    fun testStringIO2() = doTest()
+
+    @Test
+    fun testPrintArray() = doTest()
 }
 
-@Early
 class TestString : TestParser() {
-    @Test
-    fun testGetAndAssign() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/string/$name"))
+    private fun doTest() {
+        super.doTest(Paths.get("./src/test/kotlin/org/expr/string/$name"))
     }
 
     @Test
-    fun testAssign() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/string/$name"))
-    }
+    fun testGetAndAssign() = doTest()
 
     @Test
-    fun testConcat() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/string/$name"))
-    }
+    fun testAssign() = doTest()
 
     @Test
-    fun testConstantString() {
-        doTest(Paths.get("./src/test/kotlin/org/expr/string/$name"))
-    }
+    fun testConcat() = doTest()
+
+    @Test
+    fun testConstantString() = doTest()
 }
 
-@Early
 class TestArray : TestParser() {
     private fun doTest() {
         super.doTest(Paths.get("./src/test/kotlin/org/expr/array/$name"))
@@ -415,4 +398,51 @@ class TestArray : TestParser() {
 
     @Test
     fun testConcat() = doTest()
+}
+
+@Early
+class TestConditions : TestParser() {
+    private fun doTest() {
+        super.doTest(Paths.get("./src/test/kotlin/org/expr/conditions/$name"))
+    }
+
+    @Test
+    fun testIf() = doTest()
+
+    @Test
+    fun testWhile() = doTest()
+
+    @Test
+    fun testWhileWithIf() = doTest()
+
+    @Test
+    fun testContinue() = doTest()
+
+    @Test
+    fun testBreak() = doTest()
+
+    @Test
+    fun testScopes() = doTest()
+}
+
+@Early
+class TestFunctions : TestParser() {
+    private fun doTest() {
+        super.doTest(Paths.get("./src/test/kotlin/org/expr/functions/$name"))
+    }
+
+    @Test //NOTE: Codegen Test
+    fun testDeclaration() = doTest()
+
+    @Test
+    fun testCallSide() = doTest()
+
+    @Test
+    fun testRecursion() = doTest()
+
+    @Test
+    fun testWrongFunction() = doTest()
+
+    @Test
+    fun testEquals() = doTest()
 }

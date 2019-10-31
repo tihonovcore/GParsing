@@ -1,0 +1,19 @@
+@code
+fun foo() {
+    print "Unit-function without return";
+}
+
+fun play(a: Int): Int {
+    return a;
+}
+
+fun gate(a: Bool, b: Long): Long {
+    if (a) return b;
+    else return b * b;
+}
+
+@types
+@input
+@result
+
+@end

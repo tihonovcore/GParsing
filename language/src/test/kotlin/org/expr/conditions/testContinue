@@ -1,0 +1,17 @@
+@code
+def i = 0;
+while (i < 20) {
+    i = i + 1;
+
+    if (i % 5 != 0) continue;
+
+    print i;
+    print " ";
+}
+
+@types
+@input
+@result
+5 10 15 20
+
+@end
