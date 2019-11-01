@@ -142,6 +142,29 @@ class CodeGenerator(
         return resultWithLibraries.toString()
     }
 
+    override fun visitCast(ctx: ExprParser.CastContext?) {
+        require(ctx != null)
+
+        if (ctx.typeID != null) { //cast exists
+            if (ctx.type != "S") {
+                add("((")
+                visit(ctx.typeID)
+                add(") ")
+                ctx.orExpr().forEach { visit(it) }
+                add(")")
+            } else { //toString
+                add(primitiveTypeMapper[ctx.orExpr.type])
+                add("_to_string(")
+                visit(ctx.orExpr)
+                add(")")
+
+                functionGenerator.castToString(primitiveTypeMapper[ctx.orExpr.type]!!)
+            }
+        } else {
+            super.visitCast(ctx)
+        }
+    }
+
     override fun visitRead(ctx: ExprParser.ReadContext?) {
         require(ctx != null)
 
@@ -471,6 +494,30 @@ class CodeGenerator(
         add(";")
     }
 
+    override fun visitArguments(ctx: ExprParser.ArgumentsContext?) {
+        require(ctx != null)
+
+        ctx.children.forEach {
+            if (it is TerminalNode) {
+                visit(it)
+                return@forEach
+            }
+
+            val type = (it as ExprParser.GeneralContext).type
+            if (type.startsWith("A")) {
+                //TODO: copy array
+                visit(it)
+//                add(")")
+            } else if (type == "S") {
+                add("strdup(")
+                visit(it)
+                add(")")
+            } else {
+                visit(it)
+            }
+        }
+    }
+
     override fun visitIfStatement(ctx: ExprParser.IfStatementContext?) {
         require(ctx != null)
 
@@ -507,6 +554,7 @@ class CodeGenerator(
 
         indent.append("    ")
         ctx.statement().forEach { visit(it) }
+        cleanMemory()
         indent.delete(indent.length - 4, indent.length)
 
         visit(ctx.CloseBlockBrace())
@@ -534,6 +582,15 @@ class CodeGenerator(
     override fun visitJumpStatement(ctx: ExprParser.JumpStatementContext?) {
         super.visitJumpStatement(ctx)
         addln(";")
+    }
+
+    private fun cleanMemory() {
+        current[head].keys.filter {
+            val type = getType(it)
+            type.startsWith("A") || type == "S"
+        }.forEach {
+            addln("free($it);")
+        }
     }
 
     private val primitiveTypeMapper = mapOf(

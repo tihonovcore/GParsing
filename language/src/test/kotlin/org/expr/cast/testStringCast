@@ -1,0 +1,21 @@
+@code
+def hello: String;
+def id = 137 as String;
+hello = concat("Hello, C", id);
+
+println hello;
+
+def d = 1234.56789;
+def s = "Number: ";
+def dToS = d as String;
+
+s = concat(s, dToS);
+print s;
+
+@types
+@input
+@result
+Hello, C137
+Number: 1234.567890
+
+@end

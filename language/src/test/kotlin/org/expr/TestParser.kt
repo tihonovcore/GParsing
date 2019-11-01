@@ -446,3 +446,19 @@ class TestFunctions : TestParser() {
     @Test
     fun testEquals() = doTest()
 }
+
+@Early
+class TestCast : TestParser() {
+    private fun doTest() {
+        super.doTest(Paths.get("./src/test/kotlin/org/expr/cast/$name"))
+    }
+
+    @Test
+    fun testNumberCast() = doTest()
+
+    @Test
+    fun testStringCast() = doTest()
+
+    @Test
+    fun testClosureCast() = doTest()
+}

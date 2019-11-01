@@ -1,0 +1,37 @@
+@code
+def i = 4;
+i = i as Int;
+println i;
+
+def c = '4';
+c = c as Char;
+println c;
+
+def l: Long;
+l = 478 as Long;
+l = l as Long;
+println l;
+
+def d = 4.1234;
+d = d as Double;
+println d;
+
+def b = false;
+b = b as Bool;
+println b;
+
+@types
+i to I
+c to C
+l to L
+d to D
+b to B
+@input
+@result
+4
+4
+478
+4.123400
+false
+
+@end

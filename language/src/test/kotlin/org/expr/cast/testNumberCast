@@ -1,0 +1,30 @@
+@code
+def x: Int;
+x = 314;
+
+def l: Long;
+l = x as Long;
+
+println x;
+println l;
+
+def d = x as Double;
+println d / 100;
+
+def c: Char;
+c = 70 as Char;
+print c;
+
+@types
+x to I
+l to L
+d to D
+c to C
+@input
+@result
+314
+314
+3.140000
+F
+
+@end

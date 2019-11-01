@@ -265,6 +265,10 @@ statement :
 ioStatement : print | println | read;
 
 general returns [String type] :
+    cast { $type = $cast.type; }
+    ;
+
+cast returns [String type] :
     orExpr {
         $type = $orExpr.type;
     }
@@ -275,6 +279,24 @@ general returns [String type] :
             $type = ti.get($type + "||" + $orExpr.type);
         }
     )*
+    (
+        AS
+        typeID {
+            List<String> numbers = new ArrayList<>() {{ add("I"); add("C"); add("L"); add("D"); }};
+
+            if (
+                $orExpr.type.equals($typeID.type)
+                ||
+                $typeID.type.equals("S")
+                ||
+                numbers.contains($typeID.type) && numbers.contains($orExpr.type)
+            ) {
+                $type = $typeID.type;
+            } else {
+                throw new IllegalArgumentException("Impossible cast " + $orExpr.type + " to " + $typeID.type);
+            }
+        }
+    )?
     ;
 
 orExpr returns [String type] :
@@ -400,15 +422,8 @@ term returns [String type] :
     ;
 
 factor returns [String type] :
-    ID {
-        //NOTE: it can be String
-        //if (idToType.get($ID.getText()) == "B")
-        //    throw new IllegalStateException("Wrong type");
-
-        $type = getType($ID.getText());
-    }
-    (
-        get[$type] {
+    ID (
+        get[getType($ID.getText())] {
             String recieverType = getType($ID.getText());
             if (recieverType == "S") { //TODO: EQEQ
                 $type = "C";
@@ -422,7 +437,11 @@ factor returns [String type] :
         call[$ID.getText()] {
             $type = $call.type;
         }
-    )?
+    )? {
+        if (_localctx.call() == null && _localctx.get() == null) {
+            $type = getType($ID.getText());
+        }
+    }
     |
     NUMBER {
         long value = Long.parseLong($NUMBER.getText());
@@ -794,6 +813,8 @@ LONG : 'Long';
 DOUBLE : 'Double';
 STRING : 'String';
 ARRAY : 'Array';
+
+AS : 'as';
 
 IF : 'if';
 ELSE : 'else';

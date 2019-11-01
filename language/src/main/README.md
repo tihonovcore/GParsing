@@ -9,7 +9,7 @@
 
 ## 01 Expressions \[16/20\]
 * `ok` Expressions (Int, Bool)
-* `ss` Evaluation
+* `removed` Evaluation
 * `ok` Type inference
 
 ## 02 Variables & IO \[20/23\]
@@ -20,20 +20,20 @@
 * `ss` Compiler MPL
 
 ## 03 Types \[27/30\] @Early
-* `ss` Primitives (Long, Double, Char)
+* `ok` Primitives (Long, Double, Char)
 * `ss` String
 * `ss` Array
 
-## 04 Conditions & loops & functions \[3/6\]
-* `ns` if/else
-* `ns` while
-* `ns` Functions
+## 04 Conditions & loops & functions \[3/6\] @Early
+* `ok` if/else
+* `ok` while
+* `ss` Functions
+* `ss` cast
 
 ## Other \[3/10\]
 * rm semicolon, use WS
 * SingleLine-comments
 * concat like `concat("strin", 'g')`
-* cast
 
 ## Probably will supported never
 * String interpolation - сложно, строка становиться нетерминалом, а пробел символом
