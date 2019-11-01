@@ -445,6 +445,9 @@ class TestFunctions : TestParser() {
 
     @Test
     fun testEquals() = doTest()
+
+    @Test
+    fun testPassArray() = doTest()
 }
 
 @Early

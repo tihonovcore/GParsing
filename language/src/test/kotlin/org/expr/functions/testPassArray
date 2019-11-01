@@ -1,0 +1,25 @@
+@code
+fun incAndPrint(a: Array[Int], len: Int) {
+    def i = 0;
+    while (i < len) {
+        a[i] = a[i] + 1;
+        i = i + 1;
+    }
+
+    print a;
+}
+
+def array = Array[Int](4);
+array[0] = 5;
+array[1] = 8;
+array[2] = 124;
+array[3] = 23;
+
+incAndPrint(array, 4);
+
+@types
+@input
+@result
+[6, 9, 125, 24]
+
+@end

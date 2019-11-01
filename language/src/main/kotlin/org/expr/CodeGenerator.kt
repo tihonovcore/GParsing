@@ -467,6 +467,14 @@ class CodeGenerator(
             visit(type)
             add(" ")
             visit(name)
+
+            if (type.text.startsWith("A")) {
+                add(", ")
+                add("int ")
+                visit(name)
+                add("_size")
+            }
+
             if (i + 4 < ctx.childCount) add(", ") //has next argument
 
             addNewDeclaration()
@@ -497,6 +505,8 @@ class CodeGenerator(
     override fun visitArguments(ctx: ExprParser.ArgumentsContext?) {
         require(ctx != null)
 
+        if (ctx.childCount == 0) return
+
         ctx.children.forEach {
             if (it is TerminalNode) {
                 visit(it)
@@ -505,9 +515,18 @@ class CodeGenerator(
 
             val type = (it as ExprParser.GeneralContext).type
             if (type.startsWith("A")) {
-                //TODO: copy array
+                functionGenerator.copyArray(type.arrayTypeMapper())
+
+                val typeParameter = primitiveTypeMapper[type.drop(1)]
+                add("copy_${typeParameter}_array(")
                 visit(it)
-//                add(")")
+                add(", ")
+                visit(it)
+                add("_size")
+                add(")")
+                add(", ")
+                visit(it)
+                add("_size")
             } else if (type == "S") {
                 add("strdup(")
                 visit(it)

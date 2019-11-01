@@ -198,6 +198,25 @@ class FunctionGenerator {
         definitions.append(System.lineSeparator())
     }
 
+    fun copyArray(type: String) {
+        val typeParameter = type.dropLast(1)
+        val prototype = "$type copy_${typeParameter}_array($type a, int a_size);"
+        if (prototype in prototypes) return
+        prototypes += prototype
+
+        definitions.append(
+            """
+            |$type copy_${typeParameter}_array($type a, int a_size) {
+            |   $type t = malloc(a_size * sizeof($typeParameter));
+            |   for (int i = 0; i < a_size; i++) {
+            |       t[i] = a[i];
+            |   }
+            |   return t;
+            |}
+            """.trimMargin()
+        )
+    }
+
     private fun String.normalize() = this[0].toUpperCase() + this.split(" ").first().drop(1).toLowerCase()
 
     enum class StringType { LINE, STRING }
