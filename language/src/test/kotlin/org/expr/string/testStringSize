@@ -1,0 +1,16 @@
+@code
+
+def x = "Hello";
+
+if (x.size == 5) {
+    print "OK";
+} else {
+    print "FAIl";
+}
+
+@types
+@input
+@result
+OK
+
+@end

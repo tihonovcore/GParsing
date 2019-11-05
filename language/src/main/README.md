@@ -17,7 +17,7 @@
 * `ok` Assignments
 * `ok` IO functions
 * `ok` Codegen
-* `ss` Compiler MPL
+* `ok` Compiler MPL
 
 ## 03 Types \[27/30\] @Early
 * `ok` Primitives (Long, Double, Char)
@@ -28,16 +28,14 @@
 * `ok` if/else
 * `ok` while
 * `ss` Functions
-* `ss` cast
+* `ok` cast
 
 ## Other \[3/10\]
 * rm semicolon, use WS
 * SingleLine-comments
-* concat like `concat("strin", 'g')`
 
 ## Probably will supported never
 * String interpolation - сложно, строка становиться нетерминалом, а пробел символом
-* ToString - сложно вычислять длину, можно заменить на конкат
 * Multiline-comments - сложно и излишне
 * Многомерные массивы - *потенциальные* проблемы с ссылочностью (пока забанены (в тч массивы строк))
 * Classes - сложны в реализации, могут породить проблемы с ссылочностью

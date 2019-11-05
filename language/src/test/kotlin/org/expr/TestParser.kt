@@ -377,6 +377,9 @@ class TestString : TestParser() {
 
     @Test
     fun testConstantString() = doTest()
+
+    @Test
+    fun testStringSize() = doTest()
 }
 
 class TestArray : TestParser() {
@@ -401,6 +404,9 @@ class TestArray : TestParser() {
 
     @Test
     fun testConcat() = doTest()
+
+    @Test
+    fun testArraySize() = doTest()
 }
 
 @Early

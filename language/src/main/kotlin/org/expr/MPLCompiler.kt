@@ -71,3 +71,38 @@ class MPLCompiler {
         return evaluationResult
     }
 }
+
+/**
+ * args[0] - mypl file for compile
+ * args[1] - out path
+ * args[2] - (onlyC)?
+ */
+fun main(args: Array<String>) {
+    //TODO: Exceptions
+    val sourcePath = Paths.get(args[0])
+    val outPath = args[1]
+    val onlyC = (args.getOrNull(2) ?: "") == "onlyC"
+
+    val sourceCode = String(Files.readAllBytes(sourcePath))
+    println(sourceCode)
+
+    try {
+        val compiler = MPLCompiler()
+        val (c_code, _) = compiler.generateC(sourceCode)
+        println("//////////////////////////////////////////")
+        println("//////////////////////////////////////////")
+        println("//////////////////////////////////////////")
+        println()
+        println("\n$c_code")
+
+        if (!onlyC) compiler.compileC(c_code, outPath)
+    } catch (e: GParseException) {
+        println(e.message)
+    } catch (e: NullPointerException) {
+        println("Probably you use unsupported operation")
+        println("Stacktrace: ")
+        e.printStackTrace()
+    } catch (_: Exception) {
+        //parser error
+    }
+}

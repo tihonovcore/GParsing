@@ -80,10 +80,24 @@ class CodeGenerator(
         parent.add(newParent)
     }
 
+    private fun newFunctionScope() {
+        head++
+        current.add(mutableMapOf())
+        parent.add(mutableMapOf())
+    }
+
     private fun outOfScope() {
         current.removeAt(head)
         parent.removeAt(head)
         head--
+    }
+
+    private fun freeForFunction() {
+        current.drop(1).forEach { curr ->
+            curr.filter { it.value.startsWith("A") || it.value == "S" }
+                .map { it.key }
+                .forEach { addln("free($it);") }
+        }
     }
 
     private var nextDeclarationPosition = 0
@@ -130,10 +144,6 @@ class CodeGenerator(
         resultWithLibraries.append("int main() {")
         resultWithLibraries.append(System.lineSeparator())
 
-        current[head].keys.filter { getType(it).startsWith("A") }.forEach {
-            resultWithLibraries.append("    int ${it}_size = 0;")
-            resultWithLibraries.append(System.lineSeparator())
-        }
         resultWithLibraries.append(System.lineSeparator())
 
         resultWithLibraries.append(result.toString())
@@ -208,12 +218,12 @@ class CodeGenerator(
     private fun commonPrint(type: String, array: String = "", nl: String, visit: () -> Unit) {
         if (type.startsWith("A")) {
             val typeParameter = type.drop(1)
-            val template = when(typeParameter) {
+            val template = when (typeParameter) {
                 "I" -> "\"%d\""
                 "B" -> "\"%d\""
                 "C" -> "\"%c\""
-                "D" -> "%lf\""
-                "L" -> "%lld\""
+                "D" -> "\"%lf\""
+                "L" -> "\"%lld\""
                 else -> throw IllegalStateException("CODEGEN: unexpected type - $typeParameter")
             }
 
@@ -359,8 +369,6 @@ class CodeGenerator(
             add(currentVariable)
             add("_size")
             add(")")
-        } else {
-            //TODO: s + c, c + s, at + t, t + at
         }
     }
 
@@ -373,6 +381,10 @@ class CodeGenerator(
         val typeTemplate = getType(name)
         val type = primitiveTypeMapper[typeTemplate] ?: typeTemplate.arrayTypeMapper()
 
+        if (typeTemplate.startsWith("A")) {
+            addln("int ${name}_size = 0;")
+        }
+
         add(type)
         add(" ")
         add(name)
@@ -382,7 +394,12 @@ class CodeGenerator(
         when (action) {
             "=" -> {
                 add(" = ")
-                if (type == "char*") { //string
+                if (ctx.array != null) { //new array
+                    visit(value)
+                    addln(";")
+                    add("${name}_size = ")
+                    visit(ctx.array.children[2])
+                } else if (type == "char*") { //string
                     if (value is TerminalNode) { //terminal
                         val string = value.text.drop(1).dropLast(1) //rm '"'
                         addln("malloc(${string.length} + 1);")
@@ -395,12 +412,7 @@ class CodeGenerator(
                         add(")")
                     }
                 } else {
-                    if (ctx.array != null) { //new array
-                        visit(value)
-                        addln(";")
-                        add("${name}_size = ")
-                        visit(ctx.array.children[2])
-                    } else if (value.text.startsWith("concat")) { //def x = concat(a, b); //TODO: rm dirty hack
+                    if (value.text.startsWith("concat")) { //def x = concat(a, b); //TODO: rm dirty hack
                         visit(value)
                     } else if (getType(name).startsWith("A")) { //copy array
                         add("assignArray($name, ").also { functionGenerator.arrayAssign(getType(name).arrayTypeMapper()) }
@@ -420,6 +432,18 @@ class CodeGenerator(
         }
     }
 
+    override fun visitIterableSize(ctx: ExprParser.IterableSizeContext?) {
+        require(ctx != null)
+
+        val id = ctx.ID().text
+
+        if (getType(id) == "S") {
+            add("strlen($id)")
+        } else {
+            add("${id}_size")
+        }
+    }
+
     override fun visitArray(ctx: ExprParser.ArrayContext?) {
         require(ctx != null)
 
@@ -434,7 +458,7 @@ class CodeGenerator(
     override fun visitFunction(ctx: ExprParser.FunctionContext?) {
         require(ctx != null)
 
-        newScope()
+        newFunctionScope()
 
         defaultOut = functionResult
 
@@ -496,6 +520,7 @@ class CodeGenerator(
     override fun visitReturnStatement(ctx: ExprParser.ReturnStatementContext?) {
         require(ctx != null)
 
+        freeForFunction()
         visit(ctx.RETURN())
 
         if (ctx.general != null) {
@@ -561,7 +586,9 @@ class CodeGenerator(
         add(" ")
         visit(ctx.RBRACKET())
         add(" ")
+        if (ctx.children[4] !is ExprParser.BodyContext) addln(" {").also { indent.append("    ") } //add brackets anyway
         visit(ctx.children[4]) //if body
+        if (ctx.children[4] !is ExprParser.BodyContext) addln("}").also { indent = StringBuilder(indent.substring(4)) } //TODO: удалить лишние прбелы
 
         outOfScope()
 
@@ -570,7 +597,9 @@ class CodeGenerator(
 
             visit(ctx.ELSE())
             add(" ")
+            if (ctx.children[6] !is ExprParser.BodyContext) addln(" {").also { indent.append("    ") } //add brackets anyway
             visit(ctx.children[6]) //else body
+            if (ctx.children[6] !is ExprParser.BodyContext) addln("}").also { indent = StringBuilder(indent.substring(4)) } //TODO: удалить лишние прбелы
 
             outOfScope()
         }
@@ -604,7 +633,9 @@ class CodeGenerator(
         add(" ")
         visit(ctx.RBRACKET())
         add(" ")
-        visit(ctx.children[4])
+        if (ctx.children[4] !is ExprParser.BodyContext) addln(" {").also { indent.append("    ") } //add brackets anyway
+        visit(ctx.children[4]) //else body
+        if (ctx.children[4] !is ExprParser.BodyContext) addln("}").also { indent = StringBuilder(indent.substring(4)) } //TODO: удалить лишние прбел
 
         outOfScope()
     }

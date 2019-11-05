@@ -5,13 +5,13 @@ plugins {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'org.expr.MPLCompileKt'
+        attributes 'Main-Class': 'org.expr.MPLCompilerKt'
     }
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 group 'GP'
-version '0.4-BF1'
+version '0.4'
 
 repositories {
     mavenCentral()

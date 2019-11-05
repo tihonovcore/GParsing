@@ -66,6 +66,12 @@ void newScope() {
     parent.add(newParent);
 }
 
+void newFunctionScope() {
+    head++;
+    current.add(new HashMap<>());
+    parent.add(new HashMap<>());
+}
+
 void outOfScope() {
     current.remove(head);
     parent.remove(head);
@@ -516,6 +522,8 @@ factor returns [String type] :
     }
     |
     STRINGVALUE { $type = "S"; }
+    |
+    iterableSize { $type = "I"; }
     ;
 
 get [String recieverType] returns [String type] :
@@ -615,6 +623,14 @@ array returns [String type] :
     }
     ;
 
+iterableSize :
+    ID DOT SIZE {
+        String type = getType($ID.getText());
+        if (NOTEQ(type, "S") && !type.startsWith("A"))
+            error("Expected Array or String, but was: " + getType($ID.getText()), _localctx);
+    }
+    ;
+
 concat returns [String ltype, String rtype, String type]:
     CONCAT
     LBRACKET
@@ -699,7 +715,7 @@ whileStatement :
     ;
 
 function :
-    FUN ID LBRACKET { newScope(); } functionArguments RBRACKET
+    FUN ID LBRACKET { newFunctionScope(); } functionArguments RBRACKET
     returnType {
         currentReturnType = $returnType.type;
 
@@ -839,6 +855,8 @@ LONG : 'Long';
 DOUBLE : 'Double';
 STRING : 'String';
 ARRAY : 'Array';
+
+SIZE : 'size';
 
 AS : 'as';
 
