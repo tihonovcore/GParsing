@@ -68,7 +68,7 @@ class FunctionGenerator {
             """
             |char* concat(char* x, char* y) {
             |    int len = strlen(x) + strlen(y) + 1;
-            |    char* t = malloc(len);
+            |    char* t = malloc(len * sizeof(char));
             |    strcat(t, x);
             |    strcat(t, y);
             |    return t;
@@ -146,54 +146,72 @@ class FunctionGenerator {
         if (prototype in prototypes) return
         prototypes += prototype
 
-        if (type != "double") {
-            definitions.append(
-                """
-            |char* ${type}_to_string($type x) {
-            |   int len = 0;
-            |   int tmp = 1;
-            |   while (x > tmp) {
-            |       tmp *= 10;
-            |       len++;
-            |   }
-            |
-            |   char* t = malloc(len * sizeof(char));
-            |   for (int i = len - 1; i >= 0; i--) {
-            |       t[i] = '0' + (x % 10);
-            |       x /= 10;
-            |   } 
-            |
-            |   return t;
-            |}
-            """.trimMargin())
-        } else {
-            definitions.append(
-                """
-            |char* ${type}_to_string($type x) {
-            |   int len = 0;
-            |   int tmp = 1;
-            |   while (x > tmp) {
-            |       tmp *= 10;
-            |       len++;
-            |   }
-            |
-            |   long left = x;
-            |   char* t = malloc((len + 1 + 6) * sizeof(char));
-            |   for (int i = len - 1; i >= 0; i--) {
-            |       t[i] = '0' + (left % 10);
-            |       left /= 10;
-            |   }
-            |   
-            |   t[len] = '.';
-            |   
-            |   long right = (x - left) * 1000000;
-            |   for (int i = (len + 1 + 6) - 1; i > len; i--) {
-            |       t[i] = '0' + (right % 10);
-            |       right /= 10;
-            |   }
-            |   return t;
-            |}
-            """.trimMargin())
+        when (type) {
+            "char" -> {
+                definitions.append(
+                    """
+                    |char* ${type}_to_string($type x) {
+                    |   int len = 1;
+                    |   char* t = malloc(len * sizeof(char));
+                    |   t[0] = x;
+                    |
+                    |   return t;
+                    |}
+                    """.trimMargin()
+                )
+            }
+            "double" -> {
+                definitions.append(
+                    """
+                    |char* ${type}_to_string($type x) {
+                    |   int len = 0;
+                    |   int tmp = 1;
+                    |   while (x > tmp) {
+                    |       tmp *= 10;
+                    |       len++;
+                    |   }
+                    |
+                    |   long left = x;
+                    |   char* t = malloc((len + 1 + 6) * sizeof(char));
+                    |   for (int i = len - 1; i >= 0; i--) {
+                    |       t[i] = '0' + (left % 10);
+                    |       left /= 10;
+                    |   }
+                    |   
+                    |   t[len] = '.';
+                    |   
+                    |   long right = (x - left) * 1000000;
+                    |   for (int i = (len + 1 + 6) - 1; i > len; i--) {
+                    |       t[i] = '0' + (right % 10);
+                    |       right /= 10;
+                    |   }
+                    |   return t;
+                    |}
+                    """.trimMargin()
+                )
+            }
+            else -> {
+                definitions.append(
+                    """
+                    |char* ${type}_to_string($type x) {
+                    |   int len = 0;
+                    |   int tmp = 1;
+                    |   while (x > tmp) {
+                    |       tmp *= 10;
+                    |       len++;
+                    |   }
+                    |
+                    |   char* t = malloc(len * sizeof(char));
+                    |   for (int i = len - 1; i >= 0; i--) {
+                    |       t[i] = '0' + (x % 10);
+                    |       x /= 10;
+                    |   } 
+                    |
+                    |   return t;
+                    |}
+                    """.trimMargin()
+                )
+            }
         }
         definitions.append(System.lineSeparator())
     }

@@ -86,7 +86,7 @@ class CodeGenerator(
         head--
     }
 
-    private var nextDeclarationPosition = 0;
+    private var nextDeclarationPosition = 0
     private fun addNewDeclaration() {
         val pair = parser.declarations[nextDeclarationPosition]
         nextDeclarationPosition++
@@ -101,7 +101,7 @@ class CodeGenerator(
         node.accept(this)
 
         addln()
-        current[head].keys.filter { //TODO: why head?
+        current[head].keys.filter {
             val type = getType(it)
             type.startsWith("A") || type == "S"
         }.forEach {
@@ -169,9 +169,14 @@ class CodeGenerator(
         require(ctx != null)
 
         visit(ctx.ID())
+
+        if (ctx.get != null) {
+            visit(ctx.get)
+        }
+
         add(" = ")
 
-        val type = getType(ctx.ID().text)
+        val type = ctx.type
         when (type) {
             "I" -> add("readInt()")
             "B" -> add("readBool()")
@@ -492,8 +497,14 @@ class CodeGenerator(
         require(ctx != null)
 
         visit(ctx.RETURN())
-        add(" ")
-        visit(ctx.general)
+
+        if (ctx.general != null) {
+            add(" ")
+            visit(ctx.general)
+        } else {
+            add(" 0") //TODO: check
+        }
+
         addln(";")
     }
 
@@ -502,7 +513,7 @@ class CodeGenerator(
         add(";")
     }
 
-    override fun visitArguments(ctx: ExprParser.ArgumentsContext?) {
+    override fun visitCallArguments(ctx: ExprParser.CallArgumentsContext?) {
         require(ctx != null)
 
         if (ctx.childCount == 0) return
@@ -593,7 +604,7 @@ class CodeGenerator(
         add(" ")
         visit(ctx.RBRACKET())
         add(" ")
-        visit(ctx.body())
+        visit(ctx.children[4])
 
         outOfScope()
     }

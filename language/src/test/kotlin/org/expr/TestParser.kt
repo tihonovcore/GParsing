@@ -29,7 +29,7 @@ abstract class TestParser : TestCase() {
         doTest(code, input, expectedType, expectedResult)
     }
 
-    protected fun doTest(
+    private fun doTest(
         sourceCode: String,
         input: List<Any>,
         expectedTypesByName: List<Pair<String, String?>>,
@@ -356,6 +356,9 @@ class TestIO : TestParser() {
 
     @Test
     fun testPrintArray() = doTest()
+
+    @Test
+    fun testReadWithGet() = doTest()
 }
 
 class TestString : TestParser() {
@@ -464,4 +467,7 @@ class TestCast : TestParser() {
 
     @Test
     fun testClosureCast() = doTest()
+
+    @Test
+    fun testCastChar() = doTest()
 }

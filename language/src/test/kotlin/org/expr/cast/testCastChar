@@ -1,0 +1,13 @@
+@code
+def s1 = "strin";
+def s2 = 'g' as String;
+
+def s = concat(s1, s2);
+print s;
+
+@types
+@input
+@result
+string
+
+@end

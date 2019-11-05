@@ -2,9 +2,21 @@ grammar Expr;
 
 @header {
 import java.util.*;
+import org.expr.GParseException;
 }
 
 @members {
+
+public String mySource = "";
+void error(String message, ParserRuleContext _localctx) {
+    throw new GParseException(
+        message,
+        _localctx.start.getLine(),
+        _localctx.start.getCharPositionInLine(),
+        mySource
+    );
+}
+
 static boolean NOTEQ(String a, String b) {
     return !a.equals(b);
 }
@@ -164,6 +176,16 @@ static {
     ti.put("L<=D", "B"); //?
     ti.put("I<=L", "B"); //?
     ti.put("D<=L", "B"); //?
+    ti.put("L==L", "B");
+    ti.put("L==I", "B"); //?
+    ti.put("L==D", "B"); //?
+    ti.put("I==L", "B"); //?
+    ti.put("D==L", "B"); //?
+    ti.put("L!=L", "B");
+    ti.put("L!=I", "B"); //?
+    ti.put("L!=D", "B"); //?
+    ti.put("I!=L", "B"); //?
+    ti.put("D!=L", "B"); //?
     
  
     ti.put("C+C", "C");
@@ -235,6 +257,23 @@ static {
     ti.put("D>=C", "B"); //?
     ti.put("L>=C", "B"); //?
     ti.put("I>=C", "B"); //?
+
+    ti.put("C==C", "B");
+    ti.put("C==D", "B"); //?
+    ti.put("C==L", "B"); //?
+    ti.put("C==I", "B"); //?
+    ti.put("D==C", "B"); //?
+    ti.put("L==C", "B"); //?
+    ti.put("I==C", "B"); //?
+
+    ti.put("C!=C", "B");
+    ti.put("C!=D", "B"); //?
+    ti.put("C!=L", "B"); //?
+    ti.put("C!=I", "B"); //?
+    ti.put("D!=C", "B"); //?
+    ti.put("L!=C", "B"); //?
+    ti.put("I!=C", "B"); //?
+
 }
 }
 
@@ -275,7 +314,7 @@ cast returns [String type] :
     (
         OR orExpr {
             if (NOTEQ($type, "B") || NOTEQ($orExpr.type, "B"))
-                throw new IllegalArgumentException("Expected Bool arguments");
+                error("Expected Bool arguments", _localctx);
             $type = ti.get($type + "||" + $orExpr.type);
         }
     )*
@@ -293,7 +332,7 @@ cast returns [String type] :
             ) {
                 $type = $typeID.type;
             } else {
-                throw new IllegalArgumentException("Impossible cast " + $orExpr.type + " to " + $typeID.type);
+                error("Impossible cast " + $orExpr.type + " to " + $typeID.type, _localctx);
             }
         }
     )?
@@ -306,7 +345,7 @@ orExpr returns [String type] :
     (
         AND andExpr {
             if (NOTEQ($type, "B") || NOTEQ($andExpr.type, "B"))
-                throw new IllegalArgumentException("Expected Bool arguments");
+                error("Expected Bool arguments", _localctx);
             $type = ti.get($type + "&&" + $andExpr.type);
         }
     )*
@@ -332,7 +371,7 @@ andExpr returns [String type] :
 compExpr returns [String type] :
     NOT general {
         if (NOTEQ($general.type, "B"))
-            throw new IllegalArgumentException("Expected Bool argument");
+            error("Expected Bool argument", _localctx);
 
         $type = ti.get("!" + $general.type);
     }
@@ -430,7 +469,7 @@ factor returns [String type] :
             } else if (recieverType.startsWith("A")) {
                 $type = recieverType.substring(1, recieverType.length());
             } else {
-                throw new IllegalStateException("Expected Iterable type");
+                error("Expected Iterable type", _localctx);
             }
         }
         |
@@ -482,7 +521,7 @@ factor returns [String type] :
 get [String recieverType] returns [String type] :
     SqLB general SqRB {
         if ($general.type != "I")
-            throw new IllegalArgumentException("Excpected Int");
+            error("Index should be Int", _localctx);
 
         if ($recieverType == "S") {
             $type = "C";
@@ -530,7 +569,7 @@ assingmnet :
         get[getType($ID.getText())] {
             String recieverType = getType($ID.getText());
             if (NOTEQ(recieverType, "S") && !recieverType.startsWith("A"))
-                throw new IllegalStateException("Expected Iterable type");
+                error("Expected Iterable type", _localctx);
         }
     )?
     ASSIGN
@@ -538,78 +577,56 @@ assingmnet :
         general {
             if (_localctx.get != null) {
                 if (NOTEQ($get.type, $general.type))
-                    throw new IllegalStateException("Wrong types");
+                    error("Wrong types: expected " + $get.type + ", but was " + $general.type, _localctx);
             } else if (NOTEQ(getType($ID.getText()), $general.type)) {
-                throw new IllegalStateException("Wrong types");
+                error("Wrong types: expected " + getType($ID.getText()) + ", but was " + $general.type, _localctx);
             }
         }
         |
         readWithType {
-            if (getType($ID.getText()) != $readWithType.type)
-                throw new IllegalStateException("Wrong types");
+            if (_localctx.get != null) {
+                if (NOTEQ($get.type, $readWithType.type))
+                    error("Wrong types: expected " + $get.type, _localctx);
+            } else if (NOTEQ(getType($ID.getText()), $readWithType.type)) {
+                error("Wrong types: expected " + getType($ID.getText()), _localctx);
+            }
         }
         |
         STRINGVALUE {
             if (NOTEQ(getType($ID.getText()), "S"))
-                throw new IllegalStateException("Wrong types");
+                error("Wrong types: expected " + getType($ID.getText()) + ", but was String", _localctx);
         }
         |
         array {
             if (NOTEQ(getType($ID.getText()), $array.type))
-                throw new IllegalStateException("Wrong types");
+                error("Wrong types: expected " + getType($ID.getText()) + ", but was " + $array.type, _localctx);
         }
         |
         concat {
             if (NOTEQ(getType($ID.getText()), $concat.type))
-                throw new IllegalStateException("Wrong types");
+                error("Wrong types: expected " + getType($ID.getText()) + ", but was " + $concat.type, _localctx);
         }
     )
     ;
 
 array returns [String type] :
-    typeID LBRACKET general RBRACKET {
-        if (!$typeID.type.startsWith("A"))
-            throw new IllegalArgumentException("Expected array");
-        $type = $typeID.type;
+    arrayType LBRACKET general RBRACKET {
+        $type = $arrayType.type;
     }
     ;
 
 concat returns [String ltype, String rtype, String type]:
     CONCAT
     LBRACKET
-        (ID { $ltype = getType($ID.getText()); } | STRINGVALUE { $ltype = "S"; } | array { $ltype = $array.type; })
+        (ID { $ltype = getType($ID.getText()); } | STRINGVALUE { $ltype = "S"; })
         COMMA
-        (ID { $rtype = getType($ID.getText()); } | STRINGVALUE { $rtype = "S"; } | array { $rtype = $array.type; })
+        (ID { $rtype = getType($ID.getText()); } | STRINGVALUE { $rtype = "S"; })
     RBRACKET {
-        String result = "";
-
-        if ($ltype.equals($rtype)) {
+        if ($ltype.equals($rtype) && ($ltype.equals("S") || $ltype.startsWith("A"))) {
             $type = $ltype;
-            result = "OK";
+        } else {
+            error("Both arguments should have the same Iterable type, but was: " + $ltype + " and " + $rtype, _localctx); //TODO: поправтиь тоже
         }
-
-        if ($ltype.equals("C") && $rtype.equals("S") || $ltype.equals("S") && $rtype.equals("C")) {
-            $type = "S";
-            result = "OK";
-        }
-
-        if ($ltype.startsWith("A")) {
-            String ltypeParameter = $ltype.substring(1, $ltype.length());
-            if (ltypeParameter.equals($rtype)) {
-                $type = $ltype;
-                result = "OK";
-            }
-        }
-
-        if ($rtype.startsWith("A")) {
-            String rtypeParameter = $rtype.substring(1, $rtype.length());
-            if (rtypeParameter.equals($rtype)) {
-                $type = $rtype;
-                result = "OK";
-            }
-        }
-
-        if (NOTEQ(result, "OK")) throw new IllegalArgumentException("Incompatible type in `concat`");
     }
     ;
 
@@ -629,9 +646,14 @@ readWithType returns [String type] :
     READLINE { $type = "S"; }
     ;
 
-read : READ ID;
 print : PRINT general;
 println : PRINTLN general;
+read returns [String type]: READ ID ( get[getType($ID.getText())] )?
+    {
+        if (_localctx.get != null) $type = $get.type;
+        else $type = getType($ID.getText());
+    }
+    ;
 
 typeID returns [String type] :
     INT { $type = "I"; }
@@ -646,13 +668,17 @@ typeID returns [String type] :
     |
     STRING { $type = "S"; }
     |
+    arrayType { $type = $arrayType.type; }
+    ;
+
+arrayType returns [String type] :
     ARRAY SqLB typeID SqRB { $type = "A" + $typeID.type; }
     ;
 
 ifStatement :
     IF LBRACKET general RBRACKET { newScope(); } (statement | body) { outOfScope(); } {
         if (NOTEQ($general.type, "B"))
-            throw new IllegalArgumentException("Expected Bool");
+            error("Condition should be Bool, but was " + $general.type, _localctx);
     }
     (
         ELSE { newScope(); } (statement | body) { outOfScope(); }
@@ -668,7 +694,7 @@ whileStatement :
         insideWhileBlock--;
 
         if (NOTEQ($general.type, "B"))
-            throw new IllegalArgumentException("Expected Bool");
+            error("Condition should be Bool, but was " + $general.type, _localctx);
         }
     ;
 
@@ -680,13 +706,13 @@ function :
         String signature = $ID.getText() + "#" + $functionArguments.types;
 
         if (definedFunctions.containsKey(signature)) {
-            throw new IllegalStateException("Redefinition function");
+            error("Redefinition function", _localctx);
         }
         definedFunctions.put(signature, $returnType.type);
     }
     body {
         if (NOTEQ($returnType.type, "U") && !returnExistsFlag) {
-            throw new IllegalArgumentException("Return missed");
+            error("Return missed", _localctx);
         }
 
         returnExistsFlag = false;
@@ -720,11 +746,11 @@ returnStatement [String expectedType] :
 
         if (_localctx.general == null) {
             if (NOTEQ($expectedType, "U")) {
-                throw new IllegalArgumentException("Expected expression");
+                error("Expected return expression", _localctx);
             }
         } else {
             if (NOTEQ($expectedType, $general.type)) {
-                throw new IllegalArgumentException("Unexpected type: " + $general.type + ", should be " + $expectedType);
+                error("Unexpected type of return expression: " + $general.type + ", should be " + $expectedType, _localctx);
             }
         }
     }
@@ -735,19 +761,19 @@ id_call :
     ;
 
 call [String id] returns [String type] :
-    LBRACKET arguments RBRACKET {
-        String signature = id + "#" + $arguments.types;
+    LBRACKET callArguments RBRACKET {
+        String signature = id + "#" + $callArguments.types;
         String returnType = definedFunctions.get(signature);
 
         if (returnType == null) {
-            throw new IllegalArgumentException("Undefined function: " + signature);
+            error("Undefined function: " + signature, _localctx);
         }
 
         $type = returnType;
     }
     ;
 
-arguments returns [String types]: //TODO: rename to callArgumnets
+callArguments returns [String types]:
     (
         general { $types = $general.type; }
         (COMMA general { $types += "_" + $general.type; })*
@@ -757,7 +783,7 @@ arguments returns [String types]: //TODO: rename to callArgumnets
 jumpStatement :
     CONTINUE | BREAK {
         if (insideWhileBlock == 0) {
-            throw new IllegalArgumentException("Unexpected jump statement");
+            error("Unexpected jump statement", _localctx);
         }
     }
     ;

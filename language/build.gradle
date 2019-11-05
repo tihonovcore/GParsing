@@ -11,7 +11,7 @@ jar {
 }
 
 group 'GP'
-version '0.3-EARLY-SNAPSHOT'
+version '0.4-BF1'
 
 repositories {
     mavenCentral()

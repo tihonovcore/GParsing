@@ -1,0 +1,29 @@
+@code
+def a = Array[Int](5);
+
+def i = 0;
+while (i < 5) {
+    read a[i];
+
+    i = i + 1;
+}
+println a;
+
+def trash = readChar;
+
+def s = "C4PU";
+s[1] = readChar;
+s[3] = readChar;
+print s;
+
+@types
+a to AI
+s to S
+@input
+14 5 2 79 8
+3O
+@result
+[14, 5, 2, 79, 8]
+C3PO
+
+@end

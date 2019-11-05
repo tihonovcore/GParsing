@@ -11,6 +11,7 @@ import java.io.BufferedWriter
 import java.io.OutputStreamWriter
 
 import org.tihonovcore.utils.Early
+import java.lang.Exception
 import java.nio.file.Paths
 
 @Early
@@ -30,9 +31,14 @@ class MPLCompiler {
     fun generateC(source: String): Pair<String, Map<String, String>> {
         val lexer = ExprLexer(CharStreams.fromString(source))
         val tokens = CommonTokenStream(lexer)
-        val parser = ExprParser(tokens)
+        val parser = ExprParser(tokens).also { it.mySource = source }
 
-        val codeGenerator = CodeGenerator(parser, parser.file())
+        val file = parser.file()
+        if (parser.numberOfSyntaxErrors != 0) {
+            throw Exception()
+        }
+
+        val codeGenerator = CodeGenerator(parser, file)
         return Pair(codeGenerator.gen(), parser.current.first())
     }
 
