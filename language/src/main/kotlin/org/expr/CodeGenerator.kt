@@ -42,6 +42,8 @@ class CodeGenerator(
     }
 
     //////////////////////////////////////////////////////
+    ///WORKING WITH SCOPES////////////////////////////////
+    //////////////////////////////////////////////////////
 
     private var head = 0
     private val parent = mutableListOf<MutableMap<String, String>>(mutableMapOf())
@@ -109,11 +111,18 @@ class CodeGenerator(
 
     //////////////////////////////////////////////////////
 
+    /**
+     * Generate C-code
+     *
+     * @return C-code generated from [node]
+     */
     fun gen(): String {
         indent.append("    ")
+
         //main code
         node.accept(this)
 
+        //free memory in global scope
         addln()
         current[head].keys.filter {
             val type = getType(it)
@@ -123,31 +132,24 @@ class CodeGenerator(
         }
 
         indent = StringBuilder(indent.dropLast(4))
-
         addln("}")
 
         val resultWithLibraries = StringBuilder()
-        resultWithLibraries.append("#include <stdio.h>").append(System.lineSeparator())
-        resultWithLibraries.append("#include <stdbool.h>").append(System.lineSeparator())
-        resultWithLibraries.append("#include <stdlib.h>").append(System.lineSeparator())
-        resultWithLibraries.append("#include <string.h>").append(System.lineSeparator())
+        defaultOut = resultWithLibraries
+        addln("#include <stdio.h>")
+        addln("#include <stdbool.h>")
+        addln("#include <stdlib.h>")
+        addln("#include <string.h>")
+        addln()
 
-        resultWithLibraries.append(System.lineSeparator())
-        functionGenerator.prototypes.forEach {
-            resultWithLibraries.append(it).append(System.lineSeparator())
-        }
-        resultWithLibraries.append(System.lineSeparator())
+        functionGenerator.prototypes.forEach { addln(it) }
+        if (functionGenerator.prototypes.isNotEmpty()) addln()
 
-        resultWithLibraries.append(functionResult)
-        resultWithLibraries.append(System.lineSeparator())
+        add(functionResult)
 
-        resultWithLibraries.append("int main() {")
-        resultWithLibraries.append(System.lineSeparator())
-
-        resultWithLibraries.append(System.lineSeparator())
-
-        resultWithLibraries.append(result.toString())
-        resultWithLibraries.append(functionGenerator.definitions)
+        addln("int main() {")
+        addln(result)
+        addln(functionGenerator.definitions)
 
         return resultWithLibraries.toString()
     }
@@ -160,12 +162,12 @@ class CodeGenerator(
                 add("((")
                 visit(ctx.typeID)
                 add(") ")
-                ctx.orExpr().forEach { visit(it) }
+                ctx.children.dropLast(2).forEach { visit(it) }
                 add(")")
             } else { //toString
                 add(primitiveTypeMapper[ctx.orExpr.type])
                 add("_to_string(")
-                visit(ctx.orExpr)
+                ctx.children.dropLast(2).forEach { visit(it) }
                 add(")")
 
                 functionGenerator.castToString(primitiveTypeMapper[ctx.orExpr.type]!!)
@@ -204,6 +206,7 @@ class CodeGenerator(
 
     override fun visitReadWithType(ctx: ExprParser.ReadWithTypeContext?) {
         require(ctx != null)
+
         super.visitReadWithType(ctx)
         add("()")
 
@@ -229,9 +232,11 @@ class CodeGenerator(
 
             addln("printf(\"[\");")
             addln("for (int i = 0; i < ${array}_size; i++) {")
-
-            if (typeParameter != "B") addln("    printf($template, $array[i]);")
-            else addln("    printf($template, $array[i] ? \"true\" : \"false\");")
+            if (typeParameter != "B") {
+                addln("    printf($template, $array[i]);")
+            } else {
+                addln("    printf($template, $array[i] ? \"true\" : \"false\");")
+            }
             addln("    if (i + 1 != ${array}_size) printf(\", \");")
             addln("}")
             addln("printf(\"]$nl\");")
@@ -310,14 +315,10 @@ class CodeGenerator(
             add(" = ")
 
             val value = ctx.children[2]
-            if (value is ExprParser.GeneralContext && value.type == "S") { //variable with type String
+            if (value is ExprParser.GeneralContext && value.type == "S") { //String
                 add("assign(").also { functionGenerator.stringAssign() }
                 visit(variable)
                 add(", ")
-                visit(value)
-                add(")")
-            } else if (value is TerminalNode && value.text.startsWith("\"")) { //new constant string like "str"
-                add("strdup(")
                 visit(value)
                 add(")")
             } else if (value.text.startsWith("concat")) { //x = concat(a, b); //TODO: rm dirty hack
@@ -345,18 +346,18 @@ class CodeGenerator(
         require(ctx != null)
 
         val left = ctx.children[2]
-        val ltype = ctx.ltype
         val right = ctx.children[4]
-        val rtype = ctx.rtype
+        val type = ctx.ltype
+        require(type == ctx.rtype)
 
-        if (ltype == rtype && ltype == "S") {
+        if (type == "S") {
             add("concat(").also { functionGenerator.stringConcat() }
             visit(left)
             add(", ")
             visit(right)
             add(")")
-        } else if (ltype == rtype) { //arrays
-            add("concat(").also { functionGenerator.arrayConcat(ltype.arrayTypeMapper()) }
+        } else if (type.startsWith("A")) { //arrays
+            add("concat(").also { functionGenerator.arrayConcat(type.arrayTypeMapper()) }
             visit(left)
             add(", ")
             visit(right)
@@ -427,7 +428,7 @@ class CodeGenerator(
                 addln(";")
             }
             ":" -> {
-                addln(";")
+                addln(" = 0;")
             }
         }
     }
@@ -477,6 +478,7 @@ class CodeGenerator(
         visit(args)
         add(") ")
         visit(body)
+        addln()
 
         defaultOut = result
         repeat(prevIndent) { indent.append(" ") }
@@ -581,14 +583,15 @@ class CodeGenerator(
         visit(ctx.IF())
         add(" ")
         visit(ctx.LBRACKET())
-        add(" ")
         visit(ctx.general())
-        add(" ")
         visit(ctx.RBRACKET())
         add(" ")
-        if (ctx.children[4] !is ExprParser.BodyContext) addln(" {").also { indent.append("    ") } //add brackets anyway
+        if (ctx.children[4] !is ExprParser.BodyContext) addln("{").also { indent.append("    ") } //add brackets anyway
         visit(ctx.children[4]) //if body
-        if (ctx.children[4] !is ExprParser.BodyContext) addln("}").also { indent = StringBuilder(indent.substring(4)) } //TODO: удалить лишние прбелы
+        if (ctx.children[4] !is ExprParser.BodyContext) {
+            indent = StringBuilder(indent.substring(4))
+            addln("}")
+        }
 
         outOfScope()
 
@@ -597,9 +600,12 @@ class CodeGenerator(
 
             visit(ctx.ELSE())
             add(" ")
-            if (ctx.children[6] !is ExprParser.BodyContext) addln(" {").also { indent.append("    ") } //add brackets anyway
+            if (ctx.children[6] !is ExprParser.BodyContext) addln("{").also { indent.append("    ") } //add brackets anyway
             visit(ctx.children[6]) //else body
-            if (ctx.children[6] !is ExprParser.BodyContext) addln("}").also { indent = StringBuilder(indent.substring(4)) } //TODO: удалить лишние прбелы
+            if (ctx.children[6] !is ExprParser.BodyContext) {
+                indent = StringBuilder(indent.substring(4))
+                addln("}")
+            }
 
             outOfScope()
         }
@@ -628,14 +634,15 @@ class CodeGenerator(
         visit(ctx.WHILE())
         add(" ")
         visit(ctx.LBRACKET())
-        add(" ")
         visit(ctx.general())
-        add(" ")
         visit(ctx.RBRACKET())
         add(" ")
-        if (ctx.children[4] !is ExprParser.BodyContext) addln(" {").also { indent.append("    ") } //add brackets anyway
-        visit(ctx.children[4]) //else body
-        if (ctx.children[4] !is ExprParser.BodyContext) addln("}").also { indent = StringBuilder(indent.substring(4)) } //TODO: удалить лишние прбел
+        if (ctx.children[4] !is ExprParser.BodyContext) addln("{").also { indent.append("    ") } //add brackets anyway
+        visit(ctx.children[4]) //body
+        if (ctx.children[4] !is ExprParser.BodyContext) {
+            indent = StringBuilder(indent.substring(4))
+            addln("}")
+        }
 
         outOfScope()
     }

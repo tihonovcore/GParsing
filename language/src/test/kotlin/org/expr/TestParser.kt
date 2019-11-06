@@ -394,9 +394,6 @@ class TestArray : TestParser() {
     fun testFewArrays() = doTest()
 
     @Test
-    fun testEqEq() = doTest()
-
-    @Test
     fun testArraysTypeParameter() = doTest()
 
     @Test
@@ -448,9 +445,6 @@ class TestFunctions : TestParser() {
 
     @Test
     fun testRecursion() = doTest()
-
-    @Test
-    fun testWrongFunction() = doTest()
 
     @Test
     fun testEquals() = doTest()

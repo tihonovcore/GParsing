@@ -7,6 +7,8 @@ class FunctionGenerator {
     val prototypes = mutableListOf<String>()
     val definitions = StringBuilder()
 
+    private fun addln() { definitions.append(System.lineSeparator()) }
+
     fun simpleRead(type: String) {
         val name = "read" + type.normalize()
         val prototype = "$type $name();"
@@ -32,7 +34,8 @@ class FunctionGenerator {
             |}
             """.trimMargin()
         )
-        definitions.append(System.lineSeparator())
+        addln()
+        addln()
     }
 
     fun stringRead(type: StringType) {
@@ -56,7 +59,8 @@ class FunctionGenerator {
             |}
             """.trimMargin()
         )
-        definitions.append(System.lineSeparator())
+        addln()
+        addln()
     }
 
     fun stringConcat() {
@@ -75,7 +79,8 @@ class FunctionGenerator {
             |}
             """.trimMargin()
         )
-        definitions.append(System.lineSeparator())
+        addln()
+        addln()
     }
 
     fun arrayConcat(type: String) {
@@ -101,7 +106,8 @@ class FunctionGenerator {
             |}
             """.trimMargin()
         )
-        definitions.append(System.lineSeparator())
+        addln()
+        addln()
     }
 
     fun stringAssign() {
@@ -112,12 +118,13 @@ class FunctionGenerator {
         definitions.append(
             """
             |char* assign(char* x, char* y) {
-            |    free(x);
+            |    if (x != 0) free(x);
             |    return strdup(y);
             |}
             """.trimMargin()
         )
-        definitions.append(System.lineSeparator())
+        addln()
+        addln()
     }
 
     fun arrayAssign(type: String) {
@@ -138,7 +145,8 @@ class FunctionGenerator {
             |}
             """.trimMargin()
         )
-        definitions.append(System.lineSeparator())
+        addln()
+        addln()
     }
 
     fun castToString(type: String) {
@@ -213,7 +221,8 @@ class FunctionGenerator {
                 )
             }
         }
-        definitions.append(System.lineSeparator())
+        addln()
+        addln()
     }
 
     fun copyArray(type: String) {
@@ -233,6 +242,8 @@ class FunctionGenerator {
             |}
             """.trimMargin()
         )
+        addln()
+        addln()
     }
 
     private fun String.normalize() = this[0].toUpperCase() + this.split(" ").first().drop(1).toLowerCase()
