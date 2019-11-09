@@ -1,20 +1,17 @@
 package org.tihonovcore.pascal
 
 import org.tihonovcore.pascal.TokenType.*
-import org.tihonovcore.utils.Early
 
 import java.lang.StringBuilder
 
-@Early
 class Lexer {
-    @Early
     fun getTokens(string: String): List<Token> {
         var current = 0
 
         fun get() = string[current]
 
         fun shift(n: Int = 1) { current += n }
-        fun shift(type: TokenType) { shift(tokenLength[type]!!) }
+        fun shift(type: TokenType) { shift(tokenLength.getValue(type)) }
 
         fun Char.isLatinLetter() = this in 'a'..'z' || this in 'A'..'Z'
         fun Char.isDigitOrLatinLetter() = this.isDigit() || this.isLatinLetter()
@@ -53,7 +50,6 @@ class Lexer {
         return tokens + Token(EOF)
     }
 
-    @Early
     private val tokenLength = mapOf(
         LBRACKET to 1,
         RBRACKET to 1,

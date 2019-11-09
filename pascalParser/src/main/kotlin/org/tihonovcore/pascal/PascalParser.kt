@@ -1,13 +1,12 @@
 package org.tihonovcore.pascal
 
 import org.tihonovcore.pascal.TokenType.*
-import org.tihonovcore.utils.Early
 
 data class Node(val description: String, val children: List<Node> = emptyList())
 
-@Early
 class PascalParser(private val tokens: List<Token>) {
     private var possibleTypes = setOf("integer", "string", "real", "char", "boolean")
+    private var parameterNames = mutableSetOf<String>()
     private var current = 0
 
     private fun get(): Token = tokens[current]
@@ -18,6 +17,9 @@ class PascalParser(private val tokens: List<Token>) {
     }
 
     fun parse(): Node {
+        current = 0
+        parameterNames.clear()
+
         return parseFile()
     }
 
@@ -67,6 +69,8 @@ class PascalParser(private val tokens: List<Token>) {
         val name = get().data as String
         shift()
 
+        require(name !in parameterNames) { "Redeclaration: parameter `$name` appeared twice" }
+        parameterNames.add(name)
         return Node("NAME", listOf(Node(name)))
     }
 

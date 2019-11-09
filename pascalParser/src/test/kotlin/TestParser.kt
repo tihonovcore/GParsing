@@ -1,10 +1,8 @@
 import org.tihonovcore.pascal.*
-import org.tihonovcore.utils.Early
 
 import org.junit.Test
 import junit.framework.TestCase
 
-@Early
 class TestParser : TestCase() {
 
     @Test
@@ -35,6 +33,11 @@ class TestParser : TestCase() {
     @Test
     fun testFunctionWithoutReturnType() {
         doTestWithException("function missedReturnType(a: char, b: real);")
+    }
+
+    @Test
+    fun testSameParameters() {
+        doTestWithException("function badParams(a: char, a: char);")
     }
 
     @Test
