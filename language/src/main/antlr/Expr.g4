@@ -467,7 +467,8 @@ term returns [String type] :
     ;
 
 factor returns [String type] :
-    ID (
+    ID
+    (
         get[getType($ID.getText())] {
             String recieverType = getType($ID.getText());
             if (recieverType == "S") { //TODO: EQEQ
@@ -724,6 +725,11 @@ function :
         if (definedFunctions.containsKey(signature)) {
             error("Redefinition function", _localctx);
         }
+
+        if ($returnType.type.startsWith("A") || $returnType.type.equals("S")) {
+            error("Return type not supported yet: " + $returnType.type, _localctx);
+        }
+
         definedFunctions.put(signature, $returnType.type);
     }
     body {

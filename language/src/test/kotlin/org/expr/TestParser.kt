@@ -406,7 +406,6 @@ class TestArray : TestParser() {
     fun testArraySize() = doTest()
 }
 
-@Early
 class TestConditions : TestParser() {
     private fun doTest() {
         super.doTest(Paths.get("./src/test/kotlin/org/expr/conditions/$name"))
@@ -431,7 +430,6 @@ class TestConditions : TestParser() {
     fun testScopes() = doTest()
 }
 
-@Early
 class TestFunctions : TestParser() {
     private fun doTest() {
         super.doTest(Paths.get("./src/test/kotlin/org/expr/functions/$name"))
@@ -453,7 +451,6 @@ class TestFunctions : TestParser() {
     fun testPassArray() = doTest()
 }
 
-@Early
 class TestCast : TestParser() {
     private fun doTest() {
         super.doTest(Paths.get("./src/test/kotlin/org/expr/cast/$name"))
@@ -470,4 +467,10 @@ class TestCast : TestParser() {
 
     @Test
     fun testCastChar() = doTest()
+
+    @Test
+    fun testCast() = doTest()
+
+    @Test
+    fun testExtraCast() = doTest()
 }

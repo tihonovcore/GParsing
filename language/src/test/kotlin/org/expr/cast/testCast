@@ -1,0 +1,30 @@
+@code
+def a = 100 as String;
+def b = 0 as String;
+def c = -100 as String;
+
+print a;
+print "_";
+print b;
+print "_";
+print c;
+
+println "";
+
+def d = 3.14 as String;
+def e = 0.0 as String;
+def f = -3.14 as String;
+
+print d;
+print "_";
+print e;
+print "_";
+print f;
+
+@types
+@input
+@result
+100_0_-100
+3.140000_0.000000_-3.140000
+
+@end

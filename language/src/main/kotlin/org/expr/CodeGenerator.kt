@@ -158,16 +158,23 @@ class CodeGenerator(
         require(ctx != null)
 
         if (ctx.typeID != null) { //cast exists
+            fun visitExpression() = ctx.children.dropLast(2).forEach { visit(it) }
+
+            if (ctx.typeID.type == ctx.orExpr.type) {
+                visitExpression()
+                return
+            }
+
             if (ctx.type != "S") {
                 add("((")
                 visit(ctx.typeID)
                 add(") ")
-                ctx.children.dropLast(2).forEach { visit(it) }
+                visitExpression()
                 add(")")
             } else { //toString
                 add(primitiveTypeMapper[ctx.orExpr.type])
                 add("_to_string(")
-                ctx.children.dropLast(2).forEach { visit(it) }
+                visitExpression()
                 add(")")
 
                 functionGenerator.castToString(primitiveTypeMapper[ctx.orExpr.type]!!)

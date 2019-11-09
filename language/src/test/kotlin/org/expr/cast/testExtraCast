@@ -1,0 +1,20 @@
+@code
+def s = "hello";
+s = s as String;
+
+def a = Array[Long](5);
+a[2] = 4 as Long;
+a[3] = 5 as Long;
+
+a = a as Array[Long];
+
+println s;
+print a;
+
+@types
+@input
+@result
+hello
+[0, 0, 4, 5, 0]
+
+@end

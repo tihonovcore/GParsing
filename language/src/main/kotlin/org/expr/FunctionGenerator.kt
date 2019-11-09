@@ -118,6 +118,8 @@ class FunctionGenerator {
         definitions.append(
             """
             |char* assign(char* x, char* y) {
+            |    if (x == y) return x;
+            |    
             |    if (x != 0) free(x);
             |    return strdup(y);
             |}
@@ -135,11 +137,13 @@ class FunctionGenerator {
         definitions.append(
             """
             |$type assignArray($type x, $type y, int* x_size, int* y_size) {
+            |    if (x == y) return x;
+            |    
             |    if (*x_size != 0) free(x);
             |    *x_size = *y_size;
             |    x = malloc(*y_size * sizeof(${type.dropLast(1)}));
             |    for (int i = 0; i < *y_size; i++) {
-            |         x[i] = y[i];
+            |        x[i] = y[i];
             |    }
             |    return x;
             |}
@@ -159,11 +163,11 @@ class FunctionGenerator {
                 definitions.append(
                     """
                     |char* ${type}_to_string($type x) {
-                    |   int len = 1;
-                    |   char* t = malloc(len * sizeof(char));
-                    |   t[0] = x;
+                    |    int len = 1;
+                    |    char* t = malloc(len * sizeof(char));
+                    |    t[0] = x;
                     |
-                    |   return t;
+                    |    return t;
                     |}
                     """.trimMargin()
                 )
@@ -172,28 +176,36 @@ class FunctionGenerator {
                 definitions.append(
                     """
                     |char* ${type}_to_string($type x) {
-                    |   int len = 0;
-                    |   int tmp = 1;
-                    |   while (x > tmp) {
-                    |       tmp *= 10;
+                    |    bool negative = (x >= 0 ? false : true);
+                    |    if (x < 0) x = -x;
+                    |    
+                    |    long long left = x;
+                    |    
+                    |    int len = 0;
+                    |    do {
                     |       len++;
-                    |   }
-                    |
-                    |   long left = x;
-                    |   char* t = malloc((len + 1 + 6) * sizeof(char));
-                    |   for (int i = len - 1; i >= 0; i--) {
-                    |       t[i] = '0' + (left % 10);
                     |       left /= 10;
-                    |   }
+                    |    } while (left > 0);
+                    |    left = x;
+                    |    
+                    |    if (negative) len++;
+                    |
+                    |    char* t = malloc((len + 1 + 6) * sizeof(char));
+                    |    for (int i = len - 1; i >= 0; i--) {
+                    |        t[i] = '0' + (left % 10);
+                    |        left /= 10;
+                    |    }
+                    |    if (negative) t[0] = '-';
+                    |
+                    |    t[len] = '.';
                     |   
-                    |   t[len] = '.';
-                    |   
-                    |   long right = (x - left) * 1000000;
-                    |   for (int i = (len + 1 + 6) - 1; i > len; i--) {
-                    |       t[i] = '0' + (right % 10);
-                    |       right /= 10;
-                    |   }
-                    |   return t;
+                    |    if (x < 0) x = -x;
+                    |    long long right = (x - left) * 1000000;
+                    |    for (int i = (len + 1 + 6) - 1; i > len; i--) {
+                    |        t[i] = '0' + (right % 10);
+                    |        right /= 10;
+                    |    }
+                    |    return t;
                     |}
                     """.trimMargin()
                 )
@@ -202,20 +214,26 @@ class FunctionGenerator {
                 definitions.append(
                     """
                     |char* ${type}_to_string($type x) {
-                    |   int len = 0;
-                    |   int tmp = 1;
-                    |   while (x > tmp) {
-                    |       tmp *= 10;
+                    |    bool negative = (x >= 0 ? false : true);
+                    |    if (x < 0) x = -x;
+                    |    
+                    |    int tmp_x = x;
+                    |    int len = 0;
+                    |    do {
                     |       len++;
-                    |   }
+                    |       tmp_x /= 10;
+                    |    } while (tmp_x > 0);
                     |
-                    |   char* t = malloc(len * sizeof(char));
-                    |   for (int i = len - 1; i >= 0; i--) {
-                    |       t[i] = '0' + (x % 10);
-                    |       x /= 10;
-                    |   } 
-                    |
-                    |   return t;
+                    |    if (negative) len++;
+                    |    
+                    |    char* t = malloc(len * sizeof(char));
+                    |    for (int i = len - 1; i >= 0; i--) {
+                    |        t[i] = '0' + (x % 10);
+                    |        x /= 10;
+                    |    } 
+                    |    if (negative) t[0] = '-';
+                    |    
+                    |    return t;
                     |}
                     """.trimMargin()
                 )
@@ -234,11 +252,11 @@ class FunctionGenerator {
         definitions.append(
             """
             |$type copy_${typeParameter}_array($type a, int a_size) {
-            |   $type t = malloc(a_size * sizeof($typeParameter));
-            |   for (int i = 0; i < a_size; i++) {
-            |       t[i] = a[i];
-            |   }
-            |   return t;
+            |    $type t = malloc(a_size * sizeof($typeParameter));
+            |    for (int i = 0; i < a_size; i++) {
+            |        t[i] = a[i];
+            |    }
+            |    return t;
             |}
             """.trimMargin()
         )
