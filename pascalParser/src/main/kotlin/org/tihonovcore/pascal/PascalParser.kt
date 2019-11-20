@@ -67,6 +67,7 @@ class PascalParser(private val tokens: List<Token>) {
         expected(STRING)
 
         val name = get().data as String
+        require(name !in possibleTypes) { "Bad name for variable: `$name`" }
         shift()
 
         require(name !in parameterNames) { "Redeclaration: parameter `$name` appeared twice" }

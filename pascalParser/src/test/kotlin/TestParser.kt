@@ -95,6 +95,11 @@ class TestParser : TestCase() {
         doTest("  function   fun   (   a :  real  ) :  real   ;")
     }
 
+    @Test
+    fun testNameMatchWithType() {
+        doTestWithException("function f(real: real): integer;")
+    }
+
     private fun doTest(input: String) {
         var render = ""
         try {
