@@ -4,21 +4,21 @@ import org.tihonovcore.grammar.*
 
 fun main() {
     val x = Grammar(
-        "QFPSNATDZ".toList(),
-        "01():,*_;".toList(),
+        "file function procedure signature name arguments type declaration suffixOfArguments".split(" ").toList(),
+        "FUNCTION PROCEDURE LB RB COLON COMMA ID EPS SEMICOLON".split(" ").toList(),
         listOf(
-            Rule('Q', "F;"),
-            Rule('Q', "P;"),
-            Rule('F', "0S:T"),
-            Rule('P', "1S"),
-            Rule('S', "N(A)"),
-            Rule('N', "*"),
-            Rule('T', "*"),
-            Rule('A', "_"),
-            Rule('A', "DZ"),
-            Rule('D', "N:T"),
-            Rule('Z', "_"),
-            Rule('Z', ",DZ")
+            Rule("file", "function SEMICOLON".split(" ")),
+            Rule("file", "procedure SEMICOLON".split(" ")),
+            Rule("function", "FUNCTION signature COLON type".split(" ")),
+            Rule("procedure", "PROCEDURE signature".split(" ")),
+            Rule("signature", "name LB arguments RB".split(" ")),
+            Rule("name", "ID".split(" ")),
+            Rule("type", "ID".split(" ")),
+            Rule("arguments", "EPS".split(" ")),
+            Rule("arguments", "declaration suffixOfArguments".split(" ")),
+            Rule("declaration", "name COLON type".split(" ")),
+            Rule("suffixOfArguments", "EPS".split(" ")),
+            Rule("suffixOfArguments", "COMMA declaration suffixOfArguments".split(" "))
         )
     )//.removeUselessNonterminals().removeLeftRecursion().unsafeRemoveRightBranching()
 
@@ -37,7 +37,7 @@ fun main() {
     println("FIRST':")
     x.rules.forEach {
         val first = getFirst(x.first, it.right, x)
-        val _first = (first - '_') + if ('_' in first) x.follow[it.left]!! else emptySet()
+        val _first = (first - "_") + if ("_" in first) x.follow[it.left]!! else emptySet()
         println("$it ### $_first")
     }
 }

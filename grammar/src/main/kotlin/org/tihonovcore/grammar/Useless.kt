@@ -16,7 +16,7 @@ fun Grammar.removeUselessNonterminals(): Grammar {
  * without rules from these nonterminals
  */
 internal fun Grammar.removeRulesFromNonGeneratingNonterminals(): Grammar {
-    val generating = mutableSetOf<Char>()
+    val generating = mutableSetOf<String>()
 
     fun Rule.fromGenerating(): Boolean {
         return this.right.all { it in generating || it in terminals }
@@ -39,7 +39,7 @@ internal fun Grammar.removeRulesFromNonGeneratingNonterminals(): Grammar {
 }
 
 internal fun Grammar.removeRulesFromUnreachableNonterminals(): Grammar {
-    val reachable = mutableMapOf<Char, Boolean>()
+    val reachable = mutableMapOf<String, Boolean>()
     nonterminals.forEach { reachable[it] = false }
 
     findReachableNodes(this, reachable)
@@ -53,8 +53,8 @@ internal fun Grammar.filterRules(body: (Rule) -> Boolean): Grammar {
 
 internal fun findReachableNodes(
     grammar: Grammar,
-    visited: MutableMap<Char, Boolean>,
-    current: Char = visited.keys.first()
+    visited: MutableMap<String, Boolean>,
+    current: String = visited.keys.first()
 ) {
     if (visited[current]!!) return
 
@@ -70,7 +70,7 @@ internal fun findReachableNodes(
 }
 
 internal fun Grammar.removeUnusedTerminalsAndNonterminals(): Grammar {
-    fun List<Char>.findUsable() = this.filter {
+    fun List<String>.findUsable() = this.filter {
         rules.any { r -> r.left == it || r.right.contains(it) }
     }
 

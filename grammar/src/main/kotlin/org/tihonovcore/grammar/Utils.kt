@@ -4,12 +4,12 @@ fun readGrammar(lines: List<String>): Grammar {
     require(lines.size > 2)
     require(lines.drop(2).all { it.contains("->") }) //TODO: check rule format better
 
-    val nonterminals = lines[0].toList()
-    val terminals = lines[1].toList()
+    val nonterminals = lines[0].split(" ").toList()
+    val terminals = lines[1].split(" ").toList()
 
     val rules = lines.subList(2, lines.size).map {
         val args = it.split("->")
-        Rule(args[0].single(), args[1])
+        Rule(args[0], args[1].split(" "))
     }
     return Grammar(nonterminals, terminals, rules)
 }
@@ -33,7 +33,7 @@ fun detailCheckLL1(grammar: Grammar): CheckLL1Result {
             )
         }
 
-        if ('_' in firstA && firstB.cross(grammar.follow[a.left]!!.toList())) {
+        if ("_" in firstA && firstB.cross(grammar.follow[a.left]!!.toList())) {
             return CheckLL1Result(
                 isLL1 = false,
                 description = "Problem with rule A: $a and rule B: $b " + System.lineSeparator() +
@@ -48,13 +48,6 @@ fun detailCheckLL1(grammar: Grammar): CheckLL1Result {
     return CheckLL1Result(true)
 }
 
-/**
- * @return <code>true</code> if <code>grammar</code> is LL(1)-grammar
- */
-fun checkLL1(grammar: Grammar): Boolean {
-    return detailCheckLL1(grammar).isLL1
-}
-
 internal inline fun List<Rule>.forEachPair(body: (a: Rule, b: Rule) -> Unit) {
     for (i in indices) {
         for (j in indices) {
@@ -63,6 +56,6 @@ internal inline fun List<Rule>.forEachPair(body: (a: Rule, b: Rule) -> Unit) {
     }
 }
 
-private fun List<Char>.cross(other: List<Char>): Boolean {
+private fun List<String>.cross(other: List<String>): Boolean {
     return this.any { it in other }
 }

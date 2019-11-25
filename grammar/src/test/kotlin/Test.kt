@@ -1,22 +1,19 @@
-import org.tihonovcore.utils.Early
-
 import junit.framework.TestCase
 import org.junit.Assert
 import org.junit.Test
 import org.tihonovcore.grammar.*
 import java.io.File
 
-@Early
 class TestGrammar : TestCase() {
     @Test
     fun testUseless() {
         doTest(
             "grammar",
-            "SAB",
-            "ab_",
-            setOf("S->AB", "A->aB", "B->b", "B->_"),
-            listOf("Sa", "Aa", "Bb_").buildMap(),
-            listOf("S$", "Ab$", "Bb$").buildMap()
+            "S A B",
+            "a b _",
+            setOf("S->A B", "A->a B", "B->b", "B->_"),
+            listOf("S a", "A a", "B b _").buildMap(),
+            listOf("S $", "A b $", "B b $").buildMap()
         )
     }
 
@@ -24,11 +21,11 @@ class TestGrammar : TestCase() {
     fun testHardExpr() {
         doTest(
             "hardExpr",
-            "EFTWQ",
-            "n()+*_",
-            setOf("Q->+TQ", "Q->_", "W->*FW", "W->_", "T->FW", "F->n", "F->(E)", "E->TQ"),
-            listOf("En(", "Fn(", "Tn(", "W*_", "Q+_").buildMap(),
-            listOf("E$)", "F+*$)", "T+$)", "W+$)", "Q$)").buildMap()
+            "E F T W Q",
+            "n ( ) + * _",
+            setOf("Q->+ T Q", "Q->_", "W->* F W", "W->_", "T->F W", "F->n", "F->( E )", "E->T Q"),
+            listOf("E n (", "F n (", "T n (", "W * _", "Q + _").buildMap(),
+            listOf("E $ )", "F + * $ )", "T + $ )", "W + $ )", "Q $ )").buildMap()
         )
     }
 
@@ -36,11 +33,11 @@ class TestGrammar : TestCase() {
     fun testNaiveExpr() {
         doTest(
             "naiveExpr",
-            "EFTet",
-            "n()+*",
-            setOf("e->+Te", "e->_", "t->*Ft", "t->_", "T->Ft", "F->n", "F->(E)", "E->Te"),
-            listOf("En(", "Fn(", "Tn(", "e+_", "t*_").buildMap(),
-            listOf("E$)", "F+*$)", "T+$)", "e$)", "t+$)").buildMap()
+            "E F T e t",
+            "n ( ) + *",
+            setOf("e->+ T e", "e->_", "t->* F t", "t->_", "T->F t", "F->n", "F->( E )", "E->T e"),
+            listOf("E n (", "F n (", "T n (", "e + _", "t * _").buildMap(),
+            listOf("E $ )", "F + * $ )", "T + $ )", "e $ )", "t + $ )").buildMap()
         )
     }
 
@@ -48,11 +45,11 @@ class TestGrammar : TestCase() {
     fun testCorrectBracketSeq() {
         doTest(
             "psp",
-            "ST",
-            "()_",
-            setOf("S->TS", "T->(S)", "S->_"),
-            listOf("S_(", "T(").buildMap(),
-            listOf("S$)", "T($)").buildMap()
+            "S T",
+            "( ) _",
+            setOf("S->T S", "T->( S )", "S->_"),
+            listOf("S _ (", "T (").buildMap(),
+            listOf("S $ )", "T ( $ )").buildMap()
         )
     }
 
@@ -67,8 +64,8 @@ class TestGrammar : TestCase() {
         expectedNonterminals: String,
         expectedTerminals: String,
         expectedRules: Set<String>,
-        expectedFirst: Map<Char, Set<Char>>,
-        expectedFollow: Map<Char, Set<Char>>
+        expectedFirst: Map<String, Set<String>>,
+        expectedFollow: Map<String, Set<String>>
     ) {
         val grammar = getGrammar(testName).removeUselessNonterminals().removeLeftRecursion()
 
@@ -78,11 +75,11 @@ class TestGrammar : TestCase() {
         Assert.assertEquals("Wrong FIRST", expectedFirst, first)
         Assert.assertEquals("Wrong FOLLOW", expectedFollow, follow)
 
-        Assert.assertEquals("Wrong nonterminals", expectedNonterminals.toSet(), grammar.nonterminals.toSet())
-        Assert.assertEquals("Wrong terminals", expectedTerminals.toSet(), grammar.terminals.toSet())
+        Assert.assertEquals("Wrong nonterminals", expectedNonterminals.split(" ").toSet(), grammar.nonterminals.toSet())
+        Assert.assertEquals("Wrong terminals", expectedTerminals.split(" ").toSet(), grammar.terminals.toSet())
         Assert.assertEquals(
             "Wrong rules",
-            expectedRules.map { it.split("->") }.map { Rule(it[0].single(), it[1]) }.toSet(),
+            expectedRules.map { it.split("->") }.map { Rule(it[0], it[1].split(" ")) }.toSet(),
             grammar.rules.toSet()
         )
 
@@ -90,7 +87,10 @@ class TestGrammar : TestCase() {
         Assert.assertTrue("Grammar is not LL(1): \n ${checkLL1Result.description}", checkLL1Result.isLL1)
     }
 
-    private fun List<String>.buildMap(): Map<Char, Set<Char>> {
-        return this.associate { s -> s[0] to s.drop(1).toSet() }
+    private fun List<String>.buildMap(): Map<String, Set<String>> {
+        return this.associate { s ->
+            val splited = s.split(" ")
+            splited[0] to splited.drop(1).toSet()
+        }
     }
 }

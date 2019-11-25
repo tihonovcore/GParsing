@@ -1,14 +1,12 @@
 package org.tihonovcore.grammar
 
-import org.tihonovcore.utils.Early
-
 data class Grammar(
-    val nonterminals: List<Char>,
-    val terminals: List<Char>,
+    val nonterminals: List<String>,
+    val terminals: List<String>,
     val rules: List<Rule>
 ) {
-    @Early val first: MutableMap<Char, MutableSet<Char>> = buildFirst(this)
-    @Early val follow: MutableMap<Char, MutableSet<Char>> = buildFollow(this)
+    val first: MutableMap<String, MutableSet<String>> = buildFirst(this)
+    val follow: MutableMap<String, MutableSet<String>> = buildFollow(this)
 
     override fun toString(): String {
         return """
@@ -20,7 +18,7 @@ data class Grammar(
     }
 }
 
-data class Rule(val left: Char, val right: String) {
+data class Rule(val left: String, val right: List<String>) {
     override fun toString(): String {
         return "$left -> $right"
     }
