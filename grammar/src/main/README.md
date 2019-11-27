@@ -1,17 +1,22 @@
 ##Module Grammar
-<code>Grammar</code> class for Grammar<br>
-NOTE: Terminals and nonterminals are Chars.<br>
+######`Grammar` class which interprets grammar<br>
+Contains terminals, nonterminals, rules, build sets `FIRST` and `FOLLOW`<br>
+
 NOTE: You should not to use letters in lower case for terminals and nonterminals.<br>
 NOTE: '_' is symbol of empty string, you can use it in terminals<br>
 NOTE: First terminal perceive as general<br>
 
 
-<code>Rule</code> class for rule in grammar<br>
-<code>Grammar.removeUselessNonterminals()</code> build new <code>Grammar</code> from <code>this</code> without non-generative 
-and unreachable nonterminals, remove useless rules <br>
-@Early  <code>Grammar.removeLeftRecursion()</code> build new <code>Grammar</code> from <code>this</code> remove direct left recursion<br>
-<code>buildFirst(grammar: Grammar)</code> build First and put it in map <code>FIRST</code><br>
-<code>buildFollow(grammar: Grammar)</code> build Follow and put it in map <code>FOLLOW</code><br>
-<code>checkLL1(grammar: Grammar)</code> return <code>true</code> if <code>grammar</code> is LL(1)-grammar<br>
-<code>detailCheckLL1(grammar: Grammar)</code> return <code>CheckLL1Result</code>, which contains two fields: 
-<code>isLL1: Boolean</code> and <code>description: String</code> with description of error<br>
+######`Rule` class for rule in grammar<br>
+`Grammar.removeUselessNonterminals()` build new `Grammar` from `this`
+without non-generative and unreachable nonterminals, remove useless rules <br>
+
+`Grammar.removeLeftRecursion()` build new `Grammar` from `this` remove direct left recursion<br>
+
+`@Early Grammar.unsafeRemoveRightBranching()` build new `Grammar` from `this` remove right branching<br>
+
+`buildFirst(grammar: Grammar)` build set First and put it in map `FIRST`<br>
+`buildFollow(grammar: Grammar)` build set Follow and put it in map `FOLLOW`<br>
+
+`detailCheckLL1(grammar: Grammar)` return `CheckLL1Result`, which contains two fields: 
+`isLL1: Boolean` and `description: String` with description of grammar problem<br>
