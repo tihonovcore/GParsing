@@ -1,0 +1,11 @@
+expr   : term expr1;
+expr1  : PLUS expr1;
+term   : factor term1;
+term1  : STAR term1;
+factor : NUMBER | LB expr RB;
+
+PLUS   : '+';
+STAR   : '*';
+LB     : '(';
+RB     : ')';
+NUMBER : 'CAFEBABE*';

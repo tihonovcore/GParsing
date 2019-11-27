@@ -1,0 +1,367 @@
+file :
+    (statement | function)*
+    ;
+
+statement :
+    (
+        declaration
+        |
+        assingmnet
+        |
+        ioStatement
+        |
+        jumpStatement
+        |
+        returnStatement
+        |
+        idcall
+    ) SEMICOLON
+    |
+    ifStatement
+    |
+    whileStatement
+    ;
+
+ioStatement : print | println | read;
+
+general :
+    cast 
+    ;
+
+cast  :
+    orExpr (OR orExpr)* (AS typeID)?
+    ;
+
+orExpr :
+    andExpr
+    (
+        AND andExpr 
+    )*
+    ;
+
+andExpr  :
+    compExpr 
+    (
+        EQUALSEQUALS compExpr 
+        |
+        NOTEQUALS compExpr 
+    )*
+    ;
+
+compExpr  :
+    NOT general 
+    |
+    LBRACKET general RBRACKET
+    |
+    TRUE
+    |
+    FALSE
+    |
+    ID 
+    |
+    arithExpr 
+    (
+        LESSOREQUALS arithExpr1 
+        |
+        GREATEROREQUALS arithExpr1 
+        |
+        LESS arithExpr1 
+        |
+        GREATER arithExpr1 
+    )?
+;
+
+arithExpr1  :
+    arithExpr 
+    ;
+
+arithExpr  :
+    expression 
+    ;
+
+expression  :
+    term 
+    (
+        PLUS term 
+        |
+        MINUS term 
+    )*
+    ;
+
+term  :
+    factor 
+    (
+        STAR factor 
+        |
+        SLASH factor 
+        |
+        PERCENT factor 
+    )*
+    ;
+
+factor  :
+    ID
+    (
+        get
+        |
+        call 
+    )? 
+    |
+    NUMBER
+    |
+    DOUBLENUMBER 
+    |
+    SYMBOL 
+    |
+    CHAR 
+    |
+    LBRACKET expression RBRACKET 
+    |
+    PLUS factor 
+    |
+    MINUS factor 
+    |
+    STRINGVALUE 
+    |
+    iterableSize 
+    ;
+
+get   :
+    SQLB general SQRB
+    ;
+
+declaration :
+    DEF ID
+    (
+        COLON typeID 
+        |
+        ASSIGN
+        (
+            general 
+            |
+            readWithType 
+            |
+            STRINGVALUE 
+            |
+            array 
+            |
+            concat 
+        )
+    )
+    ;
+
+assingmnet :
+    ID get?
+    ASSIGN
+    (
+        general
+        |
+        readWithType
+        |
+        STRINGVALUE 
+        |
+        array 
+        |
+        concat 
+    )
+    ;
+
+array  :
+    arrayType LBRACKET general RBRACKET 
+    ;
+
+iterableSize :
+    ID DOT SIZE 
+    ;
+
+concat :
+    CONCAT
+    LBRACKET
+        (ID | STRINGVALUE)
+        COMMA
+        (ID | STRINGVALUE)
+    RBRACKET
+    ;
+
+readWithType  :
+    READINT 
+    |
+    READBOOL 
+    |
+    READCHAR 
+    |
+    READLONG 
+    |
+    READDOUBLE 
+    |
+    READSTRING 
+    |
+    READLINE 
+    ;
+
+print : PRINT general;
+println : PRINTLN general;
+read : READ ID get?;
+
+typeID  :
+    INT 
+    |
+    BOOL 
+    |
+    CHAR 
+    |
+    LONG 
+    |
+    DOUBLE 
+    |
+    STRING 
+    |
+    arrayType 
+    ;
+
+arrayType  :
+    ARRAY SQLB typeID SQRB
+    ;
+
+ifStatement :
+    IF LBRACKET general RBRACKET  
+    (
+        ELSE 
+    )?
+    ;
+
+body :
+    OPENBLOCKBRACE statement* CLOSEBLOCKBRACE
+    ;
+
+whileStatement :
+    WHILE LBRACKET general RBRACKET  
+    ;
+
+function :
+    FUN ID LBRACKET  functionArguments RBRACKET
+    returnType 
+    body
+    ;
+
+returnType :
+    (COLON typeID)?
+    ;
+
+functionArguments :
+    (
+        ID COLON typeID 
+        (COMMA ID COLON typeID )*
+    )?
+    ;
+
+returnStatement  :
+    RETURN
+    (
+        general
+    )?
+    ;
+
+idcall :
+    ID call
+    ;
+
+call   :
+    LBRACKET callArguments RBRACKET 
+    ;
+
+callArguments :
+    (
+        general 
+        (COMMA general )*
+    )?
+    ;
+
+jumpStatement :
+    CONTINUE | BREAK 
+    ;
+
+
+
+
+NUMBER : '[0-9]+';
+DOUBLENUMBER : '[0-9]+\.[0-9]+';
+
+SYMBOL : '\'A-Za-z0-9\'';
+STRINGVALUE : 'TODO SUPP STRNG';
+
+PLUS   : '+';
+MINUS   : '-';
+STAR    : '*';
+SLASH    : '/';
+PERCENT    : '%';
+LBRACKET     : '(';
+RBRACKET     : ')';
+SQLB : '[';
+SQRB : ']';
+OPENBLOCKBRACE : '{';
+CLOSEBLOCKBRACE : '}';
+
+EQUALSEQUALS : '==';
+NOTEQUALS : '!=';
+LESSOREQUALS : '<=';
+GREATEROREQUALS : '>=';
+LESS : '<';
+GREATER : '>';
+
+NOT: '!';
+OR : '||';
+AND : '&&';
+
+FALSE : 'false';
+TRUE : 'true';
+
+COLON : ':';
+ASSIGN : '=';
+DOT : '.';
+COMMA : ',';
+QUOTE : '\'';
+
+SLASHN : '\\n';
+SLASHSLASH : '\\\\';
+SLASHDOLLAR : '\\$';
+
+INT : 'Int';
+BOOL : 'Bool';
+CHAR : 'Char';
+LONG : 'Long';
+DOUBLE : 'Double';
+STRING : 'String';
+ARRAY : 'Array';
+
+SIZE : 'size';
+
+AS : 'as';
+
+IF : 'if';
+ELSE : 'else';
+WHILE : 'while';
+
+DEF : 'def';
+FUN : 'fun';
+
+BREAK : 'break';
+CONTINUE : 'continue';
+RETURN : 'return';
+
+CONCAT : 'concat';
+
+READINT : 'readInt';
+READBOOL : 'readBool';
+READCHAR : 'readChar';
+READLONG : 'readLong';
+READDOUBLE : 'readDouble';
+READSTRING : 'readString';
+READLINE : 'readLine';
+
+READ : 'read';
+PRINTLN : 'println';
+PRINT : 'print';
+ID : '[A-Za-z]*';
+
+SEMICOLON : ';';
