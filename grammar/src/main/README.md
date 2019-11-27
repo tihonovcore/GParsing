@@ -1,5 +1,5 @@
-##Module Grammar
-######`Grammar` class which interprets grammar<br>
+## Module Grammar
+###### `Grammar` class which interprets grammar<br>
 Contains terminals, nonterminals, rules, build sets `FIRST` and `FOLLOW`<br>
 
 NOTE: You should not to use letters in lower case for terminals and nonterminals.<br>
@@ -7,7 +7,7 @@ NOTE: '_' is symbol of empty string, you can use it in terminals<br>
 NOTE: First terminal perceive as general<br>
 
 
-######`Rule` class for rule in grammar<br>
+###### `Rule` class for rule in grammar<br>
 `Grammar.removeUselessNonterminals()` build new `Grammar` from `this`
 without non-generative and unreachable nonterminals, remove useless rules <br>
 

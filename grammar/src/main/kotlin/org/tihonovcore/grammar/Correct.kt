@@ -56,7 +56,6 @@ fun Grammar.unsafeRemoveRightBranching(): Grammar {
     rules.forEachPair { a, b ->
         if (a.left == b.left) {
             val lcp = findLcp(a.right, b.right)
-            println("a: ${a.right} b: ${b.right} lcp: $lcp")
 
             if (lcp != 0) {
                 val newNT = possibleNonterminals.random()

@@ -19,6 +19,8 @@ data class Grammar(
 }
 
 data class Rule(val left: String, val right: List<String>) {
+    constructor(left: String, right: String) : this(left, listOf(right))
+
     override fun toString(): String {
         return "$left -> $right"
     }
