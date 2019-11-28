@@ -13,13 +13,11 @@ name : STRING;
 FUNCTION : 'function';
 PROCEDURE : 'procedure';
 
-COMMA : 'a1';
+COMMA : ',';
 COLON : ':';
 SEMICOLON : ';';
 
-LB : '(';
-RB : ')';
+LB : '\\(';
+RB : '\\)';
 
-STRING : 'AZaz';
-
-EPSTODOSUPPORTME : 'SUPPORT';
+STRING : '[\w]*';

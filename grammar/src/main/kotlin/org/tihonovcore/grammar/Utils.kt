@@ -1,5 +1,7 @@
 package org.tihonovcore.grammar
 
+import org.tihonovcore.utils.Early
+
 fun readGrammar(lines: List<String>): Grammar {
     require(lines.size > 2)
     require(lines.drop(2).all { it.contains("->") }) //TODO: check rule format better
@@ -46,6 +48,19 @@ fun detailCheckLL1(grammar: Grammar): CheckLL1Result {
     }
 
     return CheckLL1Result(true)
+}
+
+@Early
+fun Grammar.getFIRST1(): Map<Rule, List<String>> {
+    val result = mutableMapOf<Rule, List<String>>()
+
+    rules.forEach {
+        val first = getFirst(first, it.right, this)
+        val _first = (first - "_") + if ("_" in first) follow[it.left]!! else emptySet()
+        result[it] = _first
+    }
+
+    return result
 }
 
 internal inline fun List<Rule>.forEachPair(body: (a: Rule, b: Rule) -> Unit) {

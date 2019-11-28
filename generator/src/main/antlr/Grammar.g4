@@ -23,6 +23,8 @@ factor :
     (RULE_ID | TOKEN_ID) (PLUS | STAR | QUESTION)?
     |
     LB rule1 RB (PLUS | STAR | QUESTION)?
+    |
+    EPSILON
     ;
 
 token_decl :
@@ -44,5 +46,7 @@ QUESTION : '?';
 OR : '|';
 LB : '(';
 RB : ')';
+
+EPSILON : '_';
 
 WS: [ \n\t\r]+ -> skip;

@@ -10,6 +10,7 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
     val terminals = mutableSetOf<String>()
 
     val rules = mutableListOf<Rule>()
+    val lexerRules = mutableListOf<Pair<String, String>>()
 
     private var currentLeft: String = ""
     private var currentRight = mutableListOf<String>()
@@ -39,7 +40,8 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
         val tokenId = ctx.TOKEN_ID().text
         terminals += tokenId
 
-//        val regex = ctx.regex() TODO add terminal rules
+        val regex = ctx.REGEX().text.drop(1).dropLast(1)
+        lexerRules += "\"$regex\"" to tokenId
 
         return null
     }
