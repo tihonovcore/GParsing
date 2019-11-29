@@ -11,13 +11,13 @@ file :
     ;
 
 rule_decl :
-    RULE_ID COLON rule1 SEMICOLON //TODO: rename `rule1`
+    RULE_ID COLON codeblock rule1 SEMICOLON //TODO: rename `rule1`
     ;
 
 rule1 : and (OR and)*;
 
 and :
-    factor+;
+    (factor codeblock)+;
 
 factor :
     (RULE_ID | TOKEN_ID) (PLUS | STAR | QUESTION)?
@@ -30,6 +30,8 @@ factor :
 token_decl :
     TOKEN_ID COLON REGEX SEMICOLON //TODO: support rules like `DOUBLE : NUMBER DOT NUMBER`
     ;
+
+codeblock : CODE_BLOCK*;
 
 REGEX : '\'' (~('\'' | '\n' | '\\') | '\\\\' | '\\\'' | '\\.')+ '\'';
 
@@ -44,8 +46,11 @@ STAR : '*';
 PLUS : '+';
 QUESTION : '?';
 OR : '|';
+
 LB : '(';
 RB : ')';
+
+CODE_BLOCK : '\\{' .*? '\\}';
 
 EPSILON : '_';
 

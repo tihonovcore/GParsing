@@ -31,3 +31,8 @@ task runPoint(type: JavaExec) {
     main = "RunKt"
     classpath = sourceSets.main.runtimeClasspath
 }
+
+task runGenerated(type: JavaExec) {
+    main = "gen.RunGeneratedKt"
+    classpath = sourceSets.main.runtimeClasspath
+}

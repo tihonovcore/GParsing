@@ -25,208 +25,395 @@ statement :
 ioStatement : print | println | read;
 
 general :
-    cast 
+    cast \{ $type = $cast.type; \}
     ;
 
-cast  :
-    orExpr (OR orExpr)* (AS typeID)?
+cast :
+    orExpr \{
+        $type = $orExpr.type;
+    \}
+    (
+        OR orExpr \{
+            if (NOTEQ($type, "B") || NOTEQ($orExpr.type, "B"))
+                error("Expected Bool arguments", localctx);
+            $type = ti.get($type + "||" + $orExpr.type);
+        \}
+    )*
+    (
+        AS
+        typeID \{
+            List<String> numbers = new ArrayList<>() {{ add("I"); add("C"); add("L"); add("D"); }};
+
+            if (
+                $orExpr.type.equals($typeID.type)
+                ||
+                $typeID.type.equals("S")
+                ||
+                numbers.contains($typeID.type) && numbers.contains($orExpr.type)
+            ) {
+                $type = $typeID.type;
+            } else {
+                error("Impossible cast " + $orExpr.type + " to " + $typeID.type, localctx);
+            }
+        \}
+    )?
     ;
 
 orExpr :
-    andExpr
+    andExpr \{
+        $type = $andExpr.type;
+    \}
     (
-        AND andExpr 
+        AND andExpr \{
+            if (NOTEQ($type, "B") || NOTEQ($andExpr.type, "B"))
+                error("Expected Bool arguments", localctx);
+            $type = ti.get($type + "&&" + $andExpr.type);
+        \}
     )*
     ;
 
-andExpr  :
-    compExpr 
+andExpr :
+    compExpr \{
+        $type = $compExpr.type;
+    \}
     (
-        EQUALSEQUALS compExpr 
+        EQUALSEQUALS compExpr \{
+            //TODO: check types
+            $type = ti.get($type + "==" + $compExpr.type);
+        \}
         |
-        NOTEQUALS compExpr 
+        NOTEQUALS compExpr \{
+            //TODO: check types
+            $type = ti.get($type + "!=" + $compExpr.type);
+        \}
     )*
     ;
 
-compExpr  :
-    NOT general 
+compExpr :
+    NOT general \{
+        if (NOTEQ($general.type, "B"))
+            error("Expected Bool argument", localctx);
+
+        $type = ti.get("!" + $general.type);
+    \}
     |
-    LBRACKET general RBRACKET
+    LBRACKET general RBRACKET \{
+        $type = $general.type;
+    \}
     |
-    TRUE
+    TRUE \{
+        $type = "B";
+    \}
     |
-    FALSE
+    FALSE \{
+        $type = "B";
+    \}
     |
-    ID 
+    ID \{
+        $type = getType($ID.getText());
+    \}
     |
-    arithExpr 
+    arithExpr \{
+        $type = $arithExpr.type;
+    \}
     (
-        LESSOREQUALS arithExpr1 
+        LESSOREQUALS arithExpr1 \{
+            $type = ti.get($type + "<=" + $arithExpr1.type);
+        \}
         |
-        GREATEROREQUALS arithExpr1 
+        GREATEROREQUALS arithExpr1 \{
+            $type = ti.get($type + ">=" + $arithExpr1.type);
+        \}
         |
-        LESS arithExpr1 
+        LESS arithExpr1 \{
+            $type = ti.get($type + "<" + $arithExpr1.type);
+        \}
         |
-        GREATER arithExpr1 
+        GREATER arithExpr1 \{
+            $type = ti.get($type + ">" + $arithExpr1.type);
+        \}
     )?
 ;
 
-arithExpr1  :
-    arithExpr 
+arithExpr1 :
+    arithExpr \{
+        $type = $arithExpr.type;
+    \}
     ;
 
-arithExpr  :
-    expression 
+arithExpr :
+    expression \{
+        $type = $expression.type;
+    \}
     ;
 
-expression  :
-    term 
+expression :
+    term \{
+        $type = $term.type;
+    \}
     (
-        PLUS term 
+        PLUS term \{
+            $type = ti.get($type + "+" + $term.type);
+        \}
         |
-        MINUS term 
+        MINUS term \{
+            $type = ti.get($type + "-" + $term.type);
+        \}
     )*
     ;
 
-term  :
-    factor 
+term :
+    factor \{
+        $type = $factor.type;
+    \}
     (
-        STAR factor 
+        STAR factor \{
+            $type = ti.get($type + "*" + $factor.type);
+        \}
         |
-        SLASH factor 
+        SLASH factor \{
+            $type = ti.get($type + "/" + $factor.type);
+        \}
         |
-        PERCENT factor 
+        PERCENT factor \{
+            $type = ti.get($type + "%" + $factor.type);
+        \}
     )*
     ;
 
-factor  :
+factor :
     ID
     (
-        get
+        get \{
+            String recieverType = getType($ID.getText());
+            if (recieverType == "S") { //TODO: EQEQ
+                $type = "C";
+            } else if (recieverType.startsWith("A")) {
+                $type = recieverType.substring(1, recieverType.length());
+            } else {
+                error("Expected Iterable type", localctx);
+            }
+        \}
         |
-        call 
-    )? 
+        call \{
+            $type = $call.type;
+        \}
+    )? \{
+        if (localctx.call() == null && localctx.get() == null) {
+            $type = getType($ID.getText());
+        }
+    \}
     |
-    NUMBER
+    NUMBER \{
+        long value = Long.parseLong($NUMBER.getText());
+        if (Integer.MINVALUE <= value && value <= Integer.MAXVALUE) {
+            $type = "I";
+        } else {
+            $type = "L";
+        }
+    \}
     |
-    DOUBLENUMBER 
+    DOUBLENUMBER \{
+        $type = "D";
+    \}
     |
-    SYMBOL 
+    SYMBOL \{
+        $type = "C";
+    \}
     |
-    CHAR 
+    CHAR \{
+        $type = "C";
+    \}
     |
-    LBRACKET expression RBRACKET 
+    LBRACKET expression RBRACKET \{
+        $type = $expression.type;
+    \}
     |
-    PLUS factor 
+    PLUS factor \{
+        $type = ti.get("+" + $factor.type);
+    \}
     |
-    MINUS factor 
+    MINUS factor \{
+        $type = ti.get("-" + $factor.type);
+    \}
     |
-    STRINGVALUE 
+    STRINGVALUE \{ $type = "S"; \}
     |
-    iterableSize 
+    iterableSize \{ $type = "I"; \}
     ;
 
-get   :
-    SQLB general SQRB
+get :
+    SQLB general SQRB \{
+        if ($general.type != "I")
+            error("Index should be Int", localctx);
+
+        if ($recieverType == "S") {
+            $type = "C";
+        } else if ($recieverType.startsWith("A")) {
+            $type = $recieverType.substring(1, $recieverType.length());
+        }
+    \}
     ;
 
 declaration :
     DEF ID
     (
-        COLON typeID 
+        COLON typeID \{
+            setType($ID.getText(), $typeID.type);
+        \}
         |
         ASSIGN
         (
-            general 
+            general \{
+                setType($ID.getText(), $general.type);
+            \}
             |
-            readWithType 
+            readWithType \{
+                setType($ID.getText(), $readWithType.type);
+            \}
             |
-            STRINGVALUE 
+            STRINGVALUE \{
+                setType($ID.getText(), "S");
+            \}
             |
-            array 
+            array \{
+                setType($ID.getText(), $array.type);
+            \}
             |
-            concat 
+            concat \{
+                setType($ID.getText(), $concat.type);
+            \}
         )
     )
     ;
 
 assingmnet :
-    ID get?
+    ID
+    (
+        get \{
+            String recieverType = getType($ID.getText());
+            if (NOTEQ(recieverType, "S") && !recieverType.startsWith("A"))
+                error("Expected Iterable type", localctx);
+        \}
+    )?
     ASSIGN
     (
-        general
+        general \{
+            if (localctx.get != null) {
+                if (NOTEQ($get.type, $general.type))
+                    error("Wrong types: expected " + $get.type + ", but was " + $general.type, localctx);
+            } else if (NOTEQ(getType($ID.getText()), $general.type)) {
+                error("Wrong types: expected " + getType($ID.getText()) + ", but was " + $general.type, localctx);
+            }
+        \}
         |
-        readWithType
+        readWithType \{
+            if (localctx.get != null) {
+                if (NOTEQ($get.type, $readWithType.type))
+                    error("Wrong types: expected " + $get.type, localctx);
+            } else if (NOTEQ(getType($ID.getText()), $readWithType.type)) {
+                error("Wrong types: expected " + getType($ID.getText()), localctx);
+            }
+        \}
         |
-        STRINGVALUE 
+        STRINGVALUE \{
+            if (NOTEQ(getType($ID.getText()), "S"))
+                error("Wrong types: expected " + getType($ID.getText()) + ", but was String", localctx);
+        \}
         |
-        array 
+        array \{
+            if (NOTEQ(getType($ID.getText()), $array.type))
+                error("Wrong types: expected " + getType($ID.getText()) + ", but was " + $array.type, localctx);
+        \}
         |
-        concat 
+        concat \{
+            if (NOTEQ(getType($ID.getText()), $concat.type))
+                error("Wrong types: expected " + getType($ID.getText()) + ", but was " + $concat.type, localctx);
+        \}
     )
     ;
 
-array  :
-    arrayType LBRACKET general RBRACKET 
+array :
+    arrayType LBRACKET general RBRACKET \{
+        $type = $arrayType.type;
+    \}
     ;
 
 iterableSize :
-    ID DOT SIZE 
+    ID DOT SIZE \{
+        String type = getType($ID.getText());
+        if (NOTEQ(type, "S") && !type.startsWith("A"))
+            error("Expected Array or String, but was: " + getType($ID.getText()), localctx);
+    \}
     ;
 
-concat :
+concat:
     CONCAT
     LBRACKET
-        (ID | STRINGVALUE)
+        (ID \{ $ltype = getType($ID.getText()); \} | STRINGVALUE \{ $ltype = "S"; \})
         COMMA
-        (ID | STRINGVALUE)
-    RBRACKET
+        (ID \{ $rtype = getType($ID.getText()); \} | STRINGVALUE \{ $rtype = "S"; \})
+    RBRACKET \{
+        if ($ltype.equals($rtype) && ($ltype.equals("S") || $ltype.startsWith("A"))) {
+            $type = $ltype;
+        } else {
+            error("Both arguments should have the same Iterable type, but was: " + $ltype + " and " + $rtype, localctx); //TODO: поправтиь тоже
+        }
+    \}
     ;
 
-readWithType  :
-    READINT 
+readWithType :
+    READINT \{ $type = "I"; \}
     |
-    READBOOL 
+    READBOOL \{ $type = "B"; \}
     |
-    READCHAR 
+    READCHAR \{ $type = "C"; \}
     |
-    READLONG 
+    READLONG \{ $type = "L"; \}
     |
-    READDOUBLE 
+    READDOUBLE \{ $type = "D"; \}
     |
-    READSTRING 
+    READSTRING \{ $type = "S"; \}
     |
-    READLINE 
+    READLINE \{ $type = "S"; \}
     ;
 
 print : PRINT general;
 println : PRINTLN general;
-read : READ ID get?;
-
-typeID  :
-    INT 
-    |
-    BOOL 
-    |
-    CHAR 
-    |
-    LONG 
-    |
-    DOUBLE 
-    |
-    STRING 
-    |
-    arrayType 
+read : READ ID ( get )?
+    \{
+        if (localctx.get != null) $type = $get.type;
+        else $type = getType($ID.getText());
+    \}
     ;
 
-arrayType  :
-    ARRAY SQLB typeID SQRB
+typeID :
+    INT \{ $type = "I"; \}
+    |
+    BOOL \{ $type = "B"; \}
+    |
+    CHAR \{ $type = "C"; \}
+    |
+    LONG \{ $type = "L"; \}
+    |
+    DOUBLE \{ $type = "D"; \}
+    |
+    STRING \{ $type = "S"; \}
+    |
+    arrayType \{ $type = $arrayType.type; \}
+    ;
+
+arrayType :
+    ARRAY SQLB typeID SQRB \{ $type = "A" + $typeID.type; \}
     ;
 
 ifStatement :
-    IF LBRACKET general RBRACKET  
+    IF LBRACKET general RBRACKET \{ newScope(); \} (statement | body) \{ outOfScope(); \} \{
+        if (NOTEQ($general.type, "B"))
+            error("Condition should be Bool, but was " + $general.type, localctx);
+    \}
     (
-        ELSE 
+        ELSE \{ newScope(); \} (statement | body) \{ outOfScope(); \}
     )?
     ;
 
@@ -235,50 +422,107 @@ body :
     ;
 
 whileStatement :
-    WHILE LBRACKET general RBRACKET  
+    WHILE LBRACKET general RBRACKET \{ insideWhileBlock++; \} \{ newScope(); \} (statement | body) \{ outOfScope(); \} \{
+        insideWhileBlock--;
+
+        if (NOTEQ($general.type, "B"))
+            error("Condition should be Bool, but was " + $general.type, localctx);
+        \}
     ;
 
 function :
-    FUN ID LBRACKET  functionArguments RBRACKET
-    returnType 
-    body
+    FUN ID LBRACKET \{ newFunctionScope(); \} functionArguments RBRACKET
+    returnType \{
+        currentReturnType = $returnType.type;
+
+        String signature = $ID.getText() + "#" + $functionArguments.types;
+
+        if (definedFunctions.containsKey(signature)) {
+            error("Redefinition function", localctx);
+        }
+
+        if ($returnType.type.startsWith("A") || $returnType.type.equals("S")) {
+            error("Return type not supported yet: " + $returnType.type, localctx);
+        }
+
+        definedFunctions.put(signature, $returnType.type);
+    \}
+    body \{
+        if (NOTEQ($returnType.type, "U") && !returnExistsFlag) {
+            error("Return missed", localctx);
+        }
+
+        returnExistsFlag = false;
+        currentReturnType = "U";
+    \} \{ outOfScope(); \}
     ;
 
-returnType :
-    (COLON typeID)?
+returnType:
+    (COLON typeID)? \{
+        if (localctx.typeID == null) {
+            $type = "U";
+        } else {
+            $type = $typeID.type;
+        }
+    \}
     ;
 
-functionArguments :
+functionArguments:
     (
-        ID COLON typeID 
-        (COMMA ID COLON typeID )*
+        ID COLON typeID \{ $types = $typeID.type; setType($ID.getText(), $typeID.type); \}
+        (COMMA ID COLON typeID \{ $types += "" + $typeID.type; setType($ID.getText(), $typeID.type); \})*
     )?
     ;
 
-returnStatement  :
+returnStatement :
     RETURN
     (
         general
-    )?
+    )? \{
+        returnExistsFlag = true;
+
+        if (localctx.general == null) {
+            if (NOTEQ($expectedType, "U")) {
+                error("Expected return expression", localctx);
+            }
+        } else {
+            if (NOTEQ($expectedType, $general.type)) {
+                error("Unexpected type of return expression: " + $general.type + ", should be " + $expectedType, localctx);
+            }
+        }
+    \}
     ;
 
 idcall :
     ID call
     ;
 
-call   :
-    LBRACKET callArguments RBRACKET 
+call :
+    LBRACKET callArguments RBRACKET \{
+        String signature = id + "#" + $callArguments.types;
+        String returnType = definedFunctions.get(signature);
+
+        if (returnType == null) {
+            error("Undefined function: " + signature, localctx);
+        }
+
+        $type = returnType;
+    \}
     ;
 
 callArguments :
     (
-        general 
-        (COMMA general )*
+        general \{ $types = $general.type; \}
+        (COMMA general \{ $types += "" + $general.type; \})*
     )?
     ;
 
 jumpStatement :
-    CONTINUE | BREAK 
+    CONTINUE | BREAK \{
+        if (insideWhileBlock == 0) {
+            error("Unexpected jump statement", localctx);
+        }
+    \}
     ;
 
 
@@ -286,21 +530,18 @@ jumpStatement :
 
 NUMBER : '[0-9]+';
 DOUBLENUMBER : '[0-9]+\.[0-9]+';
-
-SYMBOL : '\'A-Za-z0-9\'';
-STRINGVALUE : 'TODO SUPP STRNG';
-
-PLUS   : '+';
+PLUS   : '\\+';
 MINUS   : '-';
 STAR    : '*';
 SLASH    : '/';
 PERCENT    : '%';
-LBRACKET     : '(';
-RBRACKET     : ')';
-SQLB : '[';
-SQRB : ']';
-OPENBLOCKBRACE : '{';
-CLOSEBLOCKBRACE : '}';
+
+LBRACKET     : '\\(';
+RBRACKET     : '\\)';
+SQLB : '\\[';
+SQRB : '\\]';
+OPENBLOCKBRACE : '\\{';
+CLOSEBLOCKBRACE : '\\}';
 
 EQUALSEQUALS : '==';
 NOTEQUALS : '!=';
@@ -315,6 +556,7 @@ AND : '&&';
 
 FALSE : 'false';
 TRUE : 'true';
+SYMBOL : '\'.\'';
 
 COLON : ':';
 ASSIGN : '=';
@@ -325,6 +567,8 @@ QUOTE : '\'';
 SLASHN : '\\n';
 SLASHSLASH : '\\\\';
 SLASHDOLLAR : '\\$';
+
+STRINGVALUE : '"([^"] | \\" || \\\\)*"'; 
 
 INT : 'Int';
 BOOL : 'Bool';
@@ -362,6 +606,6 @@ READLINE : 'readLine';
 READ : 'read';
 PRINTLN : 'println';
 PRINT : 'print';
-ID : '[A-Za-z]*';
+ID : '[A-Za-z][A-Za-z0-9]*';
 
 SEMICOLON : ';';

@@ -11,6 +11,7 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
 
     val rules = mutableListOf<Rule>()
     val lexerRules = mutableListOf<Pair<String, String>>()
+    val codeBlocks = mutableMapOf<String, String>()
 
     private var currentLeft: String = ""
     private var currentRight = mutableListOf<String>()
@@ -21,6 +22,8 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
 
         val ruleId = ctx.RULE_ID().text
         val right = ctx.rule1()
+
+        currentRight.add(visit(ctx.codeblock()))
 
         nonterminals += ruleId
         currentLeft = ruleId
@@ -132,6 +135,20 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
                 }
             }
         }
+    }
+
+    @Early
+    override fun visitCodeblock(ctx: GrammarParser.CodeblockContext?): String {
+        require(ctx != null)
+
+        val name = "code_${codeBlocks.size}"
+        nonterminals.add(name)
+        rules += Rule(name, "_")
+
+        val text = ctx.text.drop(2).dropLast(2)
+        codeBlocks[name] = text
+
+        return name
     }
 
     @Early

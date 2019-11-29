@@ -7,23 +7,27 @@ import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 
 @Early
-fun generateFiles(grammar: Grammar, lexerRules: List<Pair<String, String>>) {
+fun generateFiles(
+    grammar: Grammar,
+    lexerRules: List<Pair<String, String>>,
+    codeBlocks: Map<String, String>
+) {
     with(grammar) {
-        generateTokens()
+        generateMyTokens()
         generateLexer(lexerRules)
 
         generateClasses()
-        generateParser()
+        generateParser(codeBlocks)
     }
 }
 
 @Early
-private fun Grammar.generateTokens() {
+private fun Grammar.generateMyTokens() {
     val tokenType = StringBuilder()
 
     fun <T> add(value: T) = tokenType.append(value)
 
-    add("enum class TokenType {")
+    add("enum class MyTokenType {")
     add(System.lineSeparator())
     add("    ")
 
@@ -33,10 +37,10 @@ private fun Grammar.generateTokens() {
     add(System.lineSeparator())
     add("}")
 
-    val token = "data class Token(val type: TokenType, val data: Any? = null)"
+    val token = "data class MyToken(val type: MyTokenType, val data: Any? = null)"
 
     ///////////////////////////////
-    val path = Paths.get("/home/tihonovcore/work/GParser/generator/src/main/kotlin/gen/Token.kt")
+    val path = Paths.get("/home/tihonovcore/work/GParser/generator/src/main/kotlin/gen/MyToken.kt")
     Files.write(path, tokenType.toString().toByteArray())
     Files.write(path, System.lineSeparator().toByteArray(), StandardOpenOption.APPEND)
     Files.write(path, System.lineSeparator().toByteArray(), StandardOpenOption.APPEND)
@@ -53,11 +57,11 @@ private fun Grammar.generateLexer(lexerRules: List<Pair<String, String>>) {
     fun <T> addln(value: T) = lexer.append(value).append(System.lineSeparator()).append(indent)
     fun addln() = addln("")
 
-    addln("import TokenType.*")
+    addln("import MyTokenType.*")
     addln()
 
     indent.append("    ")
-    addln("fun getTokens(string: String): List<Token> {")
+    addln("fun getMyTokens(string: String): List<MyToken> {")
     addln("var current = 0")
     addln()
     addln("fun get() = string[current]")
@@ -77,7 +81,7 @@ private fun Grammar.generateLexer(lexerRules: List<Pair<String, String>>) {
     }"""
     )
     addln()
-    addln("val tokens = mutableListOf<Token>()")
+    addln("val tokens = mutableListOf<MyToken>()")
     indent.append("    ")
     addln("while (current < string.length) {")
     addln("while (get().isWhitespace()) shift(1) //TODO: remove!!")
@@ -97,12 +101,12 @@ private fun Grammar.generateLexer(lexerRules: List<Pair<String, String>>) {
 
     addln("shift()")
     indent.delete(indent.length - 4, indent.length)
-    addln("tokens += Token(tokenType, data)")
+    addln("tokens += MyToken(tokenType, data)")
 
     addln("}")
     addln()
     indent.clear()
-    addln("return tokens + Token(EOF)")
+    addln("return tokens + MyToken(EOF)")
     addln("}")
 
     ///////////////////////////////
@@ -141,7 +145,7 @@ private fun Grammar.generateClasses() {
 }
 
 @Early
-private fun Grammar.generateParser() {
+private fun Grammar.generateParser(codeBlocks: Map<String, String>) {
     val FIRST1 = getFIRST1()
 
     val parser = StringBuilder()
@@ -152,22 +156,22 @@ private fun Grammar.generateParser() {
     fun addln() = addln("")
 
     //TODO: add to `parser` get/getType/etc
-    addln("import TokenType.*")
+    addln("import MyTokenType.*")
     addln()
     addln(
         """
-        |class MyParser(private val tokens: List<Token>) { //TODO: rename
+        |class MyParser(private val tokens: List<MyToken>) { //TODO: rename
         |    private var current = 0
         |
         |    fun get() = tokens[current]
         |    fun getType() = get().type
         |
-        |fun currentIn(vararg tokens: TokenType) = getType() in tokens 
+        |fun currentIn(vararg tokens: MyTokenType) = getType() in tokens 
         """.trimMargin()
     )
     addln()
 
-    rules.groupBy { it.left }.forEach { (left, list) ->
+    rules.filter { !it.left.startsWith("code_") }.groupBy { it.left }.forEach { (left, list) ->
         val name = cap(left)
         val returnType = if (left.startsWith("generated_")) "List<Tree>" else name
 
@@ -183,7 +187,9 @@ private fun Grammar.generateParser() {
             val tokens = convertToCode(FIRST1[rule]!!)
             addln("currentIn($tokens) -> {")
             rule.right.forEach {
-                if (it != "_") {
+                if (it.startsWith("code_")) {
+                    addln(codeBlocks[it])
+                } else if (it != "_") {
                     if (it !in terminals)
                         addln("    result += parse${cap(it)}()")
                     else
