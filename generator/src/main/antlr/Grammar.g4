@@ -14,10 +14,13 @@ rule_decl :
     RULE_ID COLON codeblock rule1 SEMICOLON //TODO: rename `rule1`
     ;
 
-rule1 : and (OR and)*;
+rule1 :
+    and (OR and)*
+    ;
 
 and :
-    (factor codeblock)+;
+    (factor codeblock)+
+    ;
 
 factor :
     (RULE_ID | TOKEN_ID) (PLUS | STAR | QUESTION)?

@@ -114,7 +114,7 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
 
                 left
             } else {
-                val arg = withNewAlpha { visit(ctx.children[1]) }
+                val arg = withNewAlpha { visit(ctx.children[1]) } //TODO: why rule doesnt add
                 when (ctx.children[3].text) {
                     "+" -> wrapWithPlus(arg)
                     "*" -> wrapWithStar(arg)
@@ -126,7 +126,7 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
             if (ctx.childCount == 1) {
                 visit(ctx.children[0])
             } else {
-                val arg = withNewAlpha { visit(ctx.children[0]) }
+                val arg = withNewAlpha { visit(ctx.children[0]) } //TODO: why rule doesnt add
                 when (ctx.children[1].text) {
                     "+" -> wrapWithPlus(arg)
                     "*" -> wrapWithStar(arg)

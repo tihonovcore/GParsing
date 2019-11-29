@@ -10,8 +10,8 @@ declaration : name COLON type;
 type : STRING;
 name : STRING;
 
-FUNCTION : 'function';
-PROCEDURE : 'procedure';
+FUNCTION : 'function\\b';
+PROCEDURE : 'procedure\\b';
 
 COMMA : ',';
 COLON : ':';
@@ -20,4 +20,4 @@ SEMICOLON : ';';
 LB : '\\(';
 RB : '\\)';
 
-STRING : '[\w]*';
+STRING : '[A-Za-z][\\w]*';

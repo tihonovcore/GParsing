@@ -10,10 +10,12 @@ import java.nio.file.Paths
 
 @Early
 fun main() {
-//    val source = readFile("simpleLang") //not ll1
-//    val source = readFile("myGrammar") //ll1
-    val source = readFile("calculator") //ll1
-//    val source = readFile("funcDeclr") //ll1
+//    val source = readFile("simpleLang") //NOTE: not ll(1)-grammar
+//    val source = readFile("myGrammar")
+//    val source = readFile("calculator")
+    val source = readFile("funcDeclr")
+//    val source = readFile("funcDeclrWithCode")
+//    val source = readFile("simpleGrammar")
 
     val lexer = GrammarLexer(CharStreams.fromString(source))
     val tokens = CommonTokenStream(lexer)
@@ -31,28 +33,15 @@ fun main() {
     println("Rules: ")
     generator.rules.forEach { println(it) }
 
-
     val grammar = Grammar(
         generator.nonterminals.toList(),
         generator.terminals.toList(),
-        generator.rules
+        generator.rules,
+        generator.lexerRules,
+        generator.codeBlocks
     )
 
-
-    println()
-    println()
-    println()
-    println(detailCheckLL1(grammar))
-    println()
-    println()
-    println()
-
-//    println("FIRST':")
-//    grammar.rules.forEach {
-//        val first = getFirst(grammar.first, it.right, grammar)
-//        val _first = (first - "_") + if ("_" in first) grammar.follow[it.left]!! else emptySet()
-//        println("$it ### $_first")
-//    }
+//    generateFiles(grammar, "/home/tihonovcore/work/GParser/generator/src/main/kotlin/gen")
 }
 
 //TODO: move to utils
