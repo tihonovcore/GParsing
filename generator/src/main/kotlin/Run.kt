@@ -33,14 +33,17 @@ fun main() {
     println("Rules: ")
     generator.rules.forEach { println(it) }
 
-    val grammar = Grammar(
-        generator.nonterminals.toList(),
-        generator.terminals.toList(),
-        generator.rules,
-        generator.lexerRules,
-        generator.codeBlocks,
-        generator.synthesized
-    )
+    val grammar = with(generator) {
+        Grammar(
+            nonterminals.toList(),
+            terminals.toList(),
+            rules,
+            lexerRules,
+            codeBlocks,
+            synthesized,
+            inherited
+        )
+    }
 
     generateFiles(grammar, "/home/tihonovcore/work/GParser/generator/src/main/kotlin/gen")
 }

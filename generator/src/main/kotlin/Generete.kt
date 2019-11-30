@@ -270,7 +270,10 @@ private fun Grammar.generateFunction(
                         val functionName = cap(it)
                         var functionArgs =  if (it.startsWith("generated_")) parent else ""
 
-                        //TODO: pass inherited args from grammar
+                        if (it in inherited.keys) {
+                            if (functionArgs.isNotEmpty()) functionArgs += ", "
+                            functionArgs += rule.calls.first()
+                        }
 
                         addln("val $it = parse$functionName($functionArgs)")
                         addln("children += $it")

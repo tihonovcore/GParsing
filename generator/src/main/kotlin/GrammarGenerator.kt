@@ -17,6 +17,7 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
 
     private var currentLeft: String = ""
     private var currentRight = mutableListOf<String>()
+    var calls: MutableList<String> = mutableListOf()
 
     @Early
     override fun visitRule_decl(ctx: GrammarParser.Rule_declContext?): String? {
@@ -32,24 +33,12 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
         val right = ctx.rule1()
         visit(right)
 
-        rules += Rule(currentLeft, currentRight)
+        rules += Rule(currentLeft, currentRight, calls)
 
+        calls = mutableListOf()
         currentRight = mutableListOf()
         return null
     }
-
-//    @Early
-//    override fun visitAttributes(ctx: GrammarParser.AttributesContext?): String? {
-//        require(ctx != null)
-//
-//        val declarations = mutableListOf<String>()
-//        for (i in 2 until ctx.childCount - 1 step 2) {
-//            declarations += "var " + ctx.children[i].text
-//        }
-//        synthesized[currentLeft] = declarations
-//
-//        return null
-//    }
 
     override fun visitInherited(ctx: GrammarParser.InheritedContext?): String? {
         require(ctx != null)
@@ -59,7 +48,7 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
             val (name, type) = ctx.children[i].text.split(":")
             declarations += name to type
         }
-        inherited[currentLeft] = declarations
+        if (declarations.isNotEmpty()) inherited[currentLeft] = declarations
 
         return null
     }
@@ -112,17 +101,18 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
         }
     }
 
+    private var underStarPlusQuestion = false
+
     @Early
     override fun visitAnd(ctx: GrammarParser.AndContext?): String? {
         require(ctx != null)
 
-//        TODO: support flag `underStarPlusQuestion`. then we'll have less generated nonterminals
-//        if (/*we are not under `*+?`*/) {
-//            ctx.children.forEach {
-//                currentRight.add(visit(it))
-//            }
-//            return null
-//        }
+        if (!underStarPlusQuestion) {
+            ctx.children.forEach {
+                currentRight.add(visit(it))
+            }
+            return null
+        }
 
         val left = findFreeNonterminalName()
         nonterminals += left
@@ -154,7 +144,10 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
 
                 left
             } else {
+                val prevFlag = underStarPlusQuestion
+                underStarPlusQuestion = true
                 val arg = withNewAlpha { visit(ctx.children[1]) } //TODO: why rule doesnt add
+                underStarPlusQuestion = prevFlag
                 when (ctx.children[3].text) {
                     "+" -> wrapWithPlus(arg)
                     "*" -> wrapWithStar(arg)
@@ -166,7 +159,10 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
             if (ctx.childCount == 1) {
                 visit(ctx.children[0])
             } else {
+                val prevFlag = underStarPlusQuestion
+                underStarPlusQuestion = true
                 val arg = withNewAlpha { visit(ctx.children[0]) } //TODO: why rule doesnt add
+                underStarPlusQuestion = prevFlag
                 when (ctx.children[1].text) {
                     "+" -> wrapWithPlus(arg)
                     "*" -> wrapWithStar(arg)
@@ -175,6 +171,16 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
                 }
             }
         }
+    }
+
+    override fun visitRuleIdWithPass(ctx: GrammarParser.RuleIdWithPassContext?): String {
+        require(ctx != null)
+
+        if (ctx.pass() != null) {
+            calls.add(ctx.pass().text.drop(1).dropLast(1))
+        }
+
+        return visit(ctx.RULE_ID())
     }
 
     @Early

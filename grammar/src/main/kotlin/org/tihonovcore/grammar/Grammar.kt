@@ -24,7 +24,11 @@ data class Grammar(
     }
 }
 
-data class Rule(val left: String, val right: List<String>) {
+data class Rule(
+    val left: String,
+    val right: List<String>,
+    @Early val calls: List<String> = mutableListOf()
+) {
     constructor(left: String, right: String) : this(left, listOf(right))
 
     override fun toString(): String {

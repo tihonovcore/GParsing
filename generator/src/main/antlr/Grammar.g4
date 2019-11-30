@@ -41,11 +41,15 @@ and :
     ;
 
 factor :
-    (RULE_ID | TOKEN_ID) (PLUS | STAR | QUESTION)?
+    (ruleIdWithPass | TOKEN_ID) (PLUS | STAR | QUESTION)?
     |
     LB rule1 RB (PLUS | STAR | QUESTION)?
     |
     EPSILON
+    ;
+
+ruleIdWithPass :
+    RULE_ID pass?
     ;
 
 token_decl :
@@ -53,6 +57,11 @@ token_decl :
     ;
 
 codeblock : CODE_BLOCK*;
+
+pass :
+    '[' .*? ']'
+    ;
+
 
 REGEX : '\'' (~('\'' | '\n' | '\\') | '\\\\' | '\\\'' | '\\.')+ '\'';
 
