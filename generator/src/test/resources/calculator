@@ -1,10 +1,10 @@
-expr   : term expr1;
-expr1  : PLUS expr;
-expr1  : _;
-term   : factor term1;
-term1  : STAR term;
-term1  : _;
-factor : NUMBER | LB expr RB;
+expr   returns [value: Int]: term expr1 \{ expr.value = term.value + expr1.value \};
+expr1  returns [value: Int]: PLUS expr \{ expr1.value = expr.value \};
+expr1  returns [value: Int]: _ \{ expr1.value = 0 \};
+term   returns [value: Int]: factor term1 \{ term.value = factor.value * term1.value \};
+term1  returns [value: Int]: STAR term \{ term1.value = term.value \};
+term1  returns [value: Int]: _ \{ term1.value = 1 \};
+factor returns [value: Int]: NUMBER \{ factor.value = Integer.parseInt(NUMBER.data as String) \} | LB expr RB \{ factor.value = expr.value \};
 
 PLUS   : '\\+';
 STAR   : '\\*';

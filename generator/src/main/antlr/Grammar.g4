@@ -11,7 +11,16 @@ file :
     ;
 
 rule_decl :
-    RULE_ID COLON codeblock rule1 SEMICOLON //TODO: rename `rule1`
+    RULE_ID attributes COLON codeblock rule1 SEMICOLON //TODO: rename `rule1`
+    ;
+
+attributes :
+    //[inherited]? (returns [synthesized])?
+    ('returns' '[' declaration (',' declaration)* ']')?
+    ;
+
+declaration :
+    RULE_ID COLON TYPE
     ;
 
 rule1 :
@@ -38,7 +47,8 @@ codeblock : CODE_BLOCK*;
 
 REGEX : '\'' (~('\'' | '\n' | '\\') | '\\\\' | '\\\'' | '\\.')+ '\'';
 
-RULE_ID : [a-z][A-Za-z0-9]*;
+TYPE : [A-Z][a-zA-Z]*;
+RULE_ID : [a-z][A-Za-z0-9]*; //TODO: rename (reason: uses in attributes)
 TOKEN_ID : [A-Z][A-Z0-9]*;
 
 COLON : ':';

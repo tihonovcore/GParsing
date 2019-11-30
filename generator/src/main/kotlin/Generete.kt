@@ -1,4 +1,5 @@
 import org.tihonovcore.grammar.Grammar
+import org.tihonovcore.grammar.Rule
 import org.tihonovcore.grammar.getFIRST1
 import org.tihonovcore.utils.Early
 import java.lang.StringBuilder
@@ -125,7 +126,14 @@ private fun Grammar.generateClasses(path: String) {
         .filter { !it.startsWith("generated_") }
         .filter { !it.startsWith("code_") }
         .forEach {
-            classes += "class ${cap(it)} : Tree()"
+            val header = "class ${cap(it)} : Tree()"
+
+            var body = " {\n"
+            synthesized[it]?.forEach { attr -> body += "    $attr\n" } //TODO: default value
+            body += "}\n"
+            if (body == " {\n}\n") body = ""
+
+            classes += header + body
         }
 
     classes += "data class Terminal(val data: Any?) : Tree()"
@@ -167,63 +175,19 @@ private fun Grammar.generateParser(path: String) {
         """.trimMargin()
     )
 
-    rules
+    val graph = rules //graph[x] = y === go from `x` by rules `y`
         .filter { !it.left.startsWith("code_") }
         .groupBy { it.left }
-        .forEach { (left, list) ->
-            val name = cap(left)
-            val returnType = if (left.startsWith("generated_")) "List<Tree>" else name
 
-            indent.append("    ")
-            addln("fun parse$name(): $returnType {")
-            addln("val result = mutableListOf<Tree>()")
-            addln()
-            indent.append("    ")
-            addln("when {")
+    graph
+        .filter { !it.key.startsWith("generated_") }
+        .forEach { (left, _) -> addln(generateFunction(graph, FIRST1, left)) }
 
-            var epsilonRuleExists = false
-            list.forEach { rule ->
-                val tokens = convertToCode(FIRST1[rule]!!)
-                addln("currentIn($tokens) -> {")
-
-                rule.right.forEach {
-                    if (it.startsWith("code_")) {
-                        addln(codeBlocks[it])
-                    } else if (it != "_") {
-                        if (it !in terminals)
-                            addln("    result += parse${cap(it)}()")
-                        else
-                            addln("    result += parseTerminal()")
-                    } else {
-                        epsilonRuleExists = true
-                    }
-                }
-                addln("}")
-            }
-            indent.delete(indent.length - 4, indent.length)
-
-            if (epsilonRuleExists)
-                addln("else -> { /* do nothing */ }")
-            else
-                addln("else -> throw IllegalStateException()")
-
-            addln("}")
-            addln()
-            indent.clear()
-
-            if (name.startsWith("generated_", true))
-                addln("return result")
-            else
-                addln("return $name().also { it.children += result }")
-
-            addln("}")
-            addln()
-        }
 
     addln(
         """
-        |   fun parseTerminal(): List<Tree> {
-        |       return listOf(Terminal(get().data)).also { current++ }
+        |   fun parseTerminal(): Terminal {
+        |       return Terminal(get().data).also { current++ }
         |   }
         """.trimMargin()
     )
@@ -234,6 +198,98 @@ private fun Grammar.generateParser(path: String) {
     val file = Paths.get("$path/Parser.kt")
     Files.write(file, parser.toString().toByteArray())
     newLine(file)
+}
+
+//TODO: clear set
+private val visited = mutableSetOf<String>()
+
+//TODO: set indent
+private fun Grammar.generateFunction(
+    graph: Map<String, List<Rule>>,
+    FIRST1: Map<Rule, List<String>>,
+    left: String,
+    parent: String = ""
+): String {
+    if (left in visited) return ""
+    visited += left
+
+    val result = StringBuilder()
+    fun addln(value: String) = result.append(value).append(System.lineSeparator())
+
+    val name = cap(left)
+    val returnType: String
+    val args: String
+
+    if (left.startsWith("generated_")) {
+        returnType = "List<Tree>"
+        args = "$parent: ${cap(parent)}"
+    } else {
+        returnType = name
+        args = "" //TODO: put inherited attributes
+    }
+
+    addln(
+        """
+           |fun parse$name($args): $returnType {
+           |    ${ if (parent == "") "val $left = $name()" else "" }
+           |    val children = mutableListOf<Tree>()
+           |
+           |    when {
+            """.trimMargin()
+    )
+
+    var epsilonRuleExists = false
+    val addLater = mutableListOf<String>()
+    graph[left]!!.forEach { rule ->
+        val tokens = convertToCode(FIRST1[rule]!!)
+        addln("currentIn($tokens) -> {")
+
+        rule.right.forEach {
+            when {
+                it.startsWith("code_") -> addln("   " + codeBlocks[it])
+                it.startsWith("generated_") -> {
+                    //NOTE: if we are `generated_` we have parent yet
+                    val nextParent = if (left.startsWith("generated_")) parent else left
+                    if (it !in visited) {
+                        addLater += generateFunction(graph, FIRST1, it, nextParent)
+                    }
+                    addln("children += parse${cap(it)}($nextParent)")
+                }
+                it != "_" -> {
+                    if (it !in terminals) {
+                        val functionName = cap(it)
+                        val functionArgs =  if (it.startsWith("generated_")) parent else ""
+                        addln("val $it = parse$functionName($functionArgs)")
+                        addln("children += $it")
+                    } else {
+                        addln("val $it = parseTerminal()")
+                        addln("children += $it")
+                    }
+                }
+                else -> epsilonRuleExists = true
+            }
+        }
+
+        addln("}")
+    }
+
+    if (epsilonRuleExists)
+        addln("else -> { /* do nothing */ }")
+    else
+        addln("else -> throw IllegalStateException()")
+
+    addln("}")
+
+    if (left.startsWith("generated_"))
+        addln("    return children")
+    else
+        addln("    return $left.also { it.children += children }")
+
+    addln("}")
+    addln("")
+
+    addLater.forEach { result.append(it) }
+    return result.toString()
 }
 
 @Early

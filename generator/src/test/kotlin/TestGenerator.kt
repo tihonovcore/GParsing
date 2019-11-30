@@ -47,14 +47,6 @@ class TestGenerator : TestCase() {
         grammar.rules.forEach { println(it) }
         println(detailCheckLL1(grammar))
         println()
-
-//    println("FIRST':")
-//    grammar.rules.forEach {
-//        val first = getFirst(grammar.first, it.right, grammar)
-//        val _first = (first - "_") + if ("_" in first) grammar.follow[it.left]!! else emptySet()
-//        println("$it ### $_first")
-//    }
-
     }
 }
 

@@ -12,8 +12,8 @@ import java.nio.file.Paths
 fun main() {
 //    val source = readFile("simpleLang") //NOTE: not ll(1)-grammar
 //    val source = readFile("myGrammar")
-//    val source = readFile("calculator")
-    val source = readFile("funcDeclr")
+    val source = readFile("calculator")
+//    val source = readFile("funcDeclr")
 //    val source = readFile("funcDeclrWithCode")
 //    val source = readFile("simpleGrammar")
 
@@ -38,10 +38,11 @@ fun main() {
         generator.terminals.toList(),
         generator.rules,
         generator.lexerRules,
-        generator.codeBlocks
+        generator.codeBlocks,
+        generator.synthesized
     )
 
-//    generateFiles(grammar, "/home/tihonovcore/work/GParser/generator/src/main/kotlin/gen")
+    generateFiles(grammar, "/home/tihonovcore/work/GParser/generator/src/main/kotlin/gen")
 }
 
 //TODO: move to utils
