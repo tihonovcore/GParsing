@@ -16,6 +16,15 @@ rule_decl :
 
 attributes :
     //[inherited]? (returns [synthesized])?
+    inherited synthesized
+//    ('returns' '[' declaration (',' declaration)* ']')?
+    ;
+
+inherited :
+    ('[' declaration (',' declaration)* ']')?
+    ;
+
+synthesized :
     ('returns' '[' declaration (',' declaration)* ']')?
     ;
 
@@ -47,7 +56,7 @@ codeblock : CODE_BLOCK*;
 
 REGEX : '\'' (~('\'' | '\n' | '\\') | '\\\\' | '\\\'' | '\\.')+ '\'';
 
-TYPE : [A-Z][a-zA-Z]*;
+TYPE : [A-Z][a-z]*;
 RULE_ID : [a-z][A-Za-z0-9]*; //TODO: rename (reason: uses in attributes)
 TOKEN_ID : [A-Z][A-Z0-9]*;
 

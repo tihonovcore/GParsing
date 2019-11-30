@@ -13,6 +13,7 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
     val lexerRules = mutableListOf<Pair<String, String>>()
     val codeBlocks = mutableMapOf<String, String>()
     val synthesized: MutableMap<String, MutableList<String>> = mutableMapOf()
+    val inherited: MutableMap<String, MutableList<Pair<String, String>>> = mutableMapOf()
 
     private var currentLeft: String = ""
     private var currentRight = mutableListOf<String>()
@@ -37,8 +38,33 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
         return null
     }
 
-    @Early
-    override fun visitAttributes(ctx: GrammarParser.AttributesContext?): String? {
+//    @Early
+//    override fun visitAttributes(ctx: GrammarParser.AttributesContext?): String? {
+//        require(ctx != null)
+//
+//        val declarations = mutableListOf<String>()
+//        for (i in 2 until ctx.childCount - 1 step 2) {
+//            declarations += "var " + ctx.children[i].text
+//        }
+//        synthesized[currentLeft] = declarations
+//
+//        return null
+//    }
+
+    override fun visitInherited(ctx: GrammarParser.InheritedContext?): String? {
+        require(ctx != null)
+
+        val declarations = mutableListOf<Pair<String, String>>()
+        for (i in 1 until ctx.childCount - 1 step 2) {
+            val (name, type) = ctx.children[i].text.split(":")
+            declarations += name to type
+        }
+        inherited[currentLeft] = declarations
+
+        return null
+    }
+
+    override fun visitSynthesized(ctx: GrammarParser.SynthesizedContext?): String? {
         require(ctx != null)
 
         val declarations = mutableListOf<String>()

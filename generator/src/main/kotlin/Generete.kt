@@ -218,7 +218,7 @@ private fun Grammar.generateFunction(
 
     val name = cap(left)
     val returnType: String
-    val args: String
+    var args: String
 
     if (left.startsWith("generated_")) {
         returnType = "List<Tree>"
@@ -226,6 +226,11 @@ private fun Grammar.generateFunction(
     } else {
         returnType = name
         args = "" //TODO: put inherited attributes
+    }
+
+    inherited[if (parent == "") left else parent]?.forEach {
+        if (args != "") args += ", "
+        args += "${it.first}: ${it.second}"
     }
 
     addln(
@@ -249,16 +254,24 @@ private fun Grammar.generateFunction(
                 it.startsWith("code_") -> addln("   " + codeBlocks[it])
                 it.startsWith("generated_") -> {
                     //NOTE: if we are `generated_` we have parent yet
-                    val nextParent = if (left.startsWith("generated_")) parent else left
+                    var nextParent = if (left.startsWith("generated_")) parent else left
                     if (it !in visited) {
                         addLater += generateFunction(graph, FIRST1, it, nextParent)
                     }
+
+                    inherited[nextParent]?.forEach {
+                        nextParent += ", ${it.first}"
+                    }
+
                     addln("children += parse${cap(it)}($nextParent)")
                 }
                 it != "_" -> {
                     if (it !in terminals) {
                         val functionName = cap(it)
-                        val functionArgs =  if (it.startsWith("generated_")) parent else ""
+                        var functionArgs =  if (it.startsWith("generated_")) parent else ""
+
+                        //TODO: pass inherited args from grammar
+
                         addln("val $it = parse$functionName($functionArgs)")
                         addln("children += $it")
                     } else {

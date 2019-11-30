@@ -8,7 +8,8 @@ data class Grammar(
     val rules: List<Rule>,
     @Early val lexerRules: MutableList<Pair<String, String>> = mutableListOf(),
     @Early val codeBlocks: MutableMap<String, String> = mutableMapOf(),
-    @Early val synthesized: MutableMap<String, MutableList<String>> = mutableMapOf()
+    @Early val synthesized: MutableMap<String, MutableList<String>> = mutableMapOf(),
+    @Early val inherited: MutableMap<String, MutableList<Pair<String, String>>> = mutableMapOf()
 ) {
     val first: MutableMap<String, MutableSet<String>> = buildFirst(this)
     val follow: MutableMap<String, MutableSet<String>> = buildFollow(this)
