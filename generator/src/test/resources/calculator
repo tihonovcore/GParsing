@@ -1,13 +1,53 @@
-expr   returns [value: Int]: term expr1 \{ expr.value = term.value + expr1.value \};
-expr1  returns [value: Int]: PLUS expr \{ expr1.value = expr.value \};
-expr1  returns [value: Int]: _ \{ expr1.value = 0 \};
-term   returns [value: Int]: factor term1 \{ term.value = factor.value * term1.value \};
-term1  returns [value: Int]: STAR term \{ term1.value = term.value \};
-term1  returns [value: Int]: _ \{ term1.value = 1 \};
-factor returns [value: Int]: NUMBER \{ factor.value = Integer.parseInt(NUMBER.data as String) \} | LB expr RB \{ factor.value = expr.value \};
+expr returns [value: Int]:
+    term expr1\[term.value\] \{ expr.value = expr1.value \}
+    ;
+
+expr1[accum: Int] returns [value: Int]:
+    PLUS term expr1mask\[accum  + term.value\] \{ expr1.value = expr1mask.value \}
+    ;
+
+expr1[accum: Int] returns [value: Int]:
+    MINUS term expr1mask\[accum - term.value\] \{ expr1.value = expr1mask.value \}
+    ;
+
+expr1[accum: Int] returns [value: Int]:
+    _ \{ expr1.value = accum \}
+    ;
+
+expr1mask[accum: Int] returns [value: Int]:
+    expr1\[accum\] \{ expr1mask.value = expr1.value \}
+    ;
+
+term returns [value: Int]:
+    factor term1\[factor.value\] \{ term.value = term1.value \}
+    ;
+
+term1[accum: Int] returns [value: Int]:
+    STAR factor term1mask\[accum * factor.value\] \{ term1.value = term1mask.value \}
+    ;
+
+term1[accum: Int] returns [value: Int]:
+    SLASH factor term1mask\[accum / factor.value\] \{ term1.value = term1mask.value \}
+    ;
+
+term1 [accum: Int] returns [value: Int]:
+    _ \{ term1.value = accum \}
+    ;
+
+term1mask[accum: Int] returns [value: Int]:
+    term1\[accum\] \{ term1mask.value = term1.value \}
+    ;
+
+factor returns [value: Int]:
+    NUMBER \{ factor.value = Integer.parseInt(NUMBER.data as String) \}
+    |
+    LB expr RB \{ factor.value = expr.value \}
+    ;
 
 PLUS   : '\\+';
+MINUS   : '-';
 STAR   : '\\*';
+SLASH   : '/';
 LB     : '\\(';
 RB     : '\\)';
 NUMBER : '[0-9]+';

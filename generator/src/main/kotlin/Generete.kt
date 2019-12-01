@@ -11,24 +11,27 @@ import java.nio.file.StandardOpenOption
 @Early
 fun generateFiles(
     grammar: Grammar,
-    path: String
+    path: String,
+    packageName: String
 ) {
-    with(grammar) {
-        generateMyTokens(path)
-        generateLexer(path)
+    visited.clear()
 
-        generateClasses(path)
-        generateParser(path)
+    with(grammar) {
+        generateTokens(path, packageName)
+        generateLexer(path, packageName)
+
+        generateClasses(path, packageName)
+        generateParser(path, packageName)
     }
 }
 
 @Early
-private fun Grammar.generateMyTokens(path: String) {
+private fun Grammar.generateTokens(path: String, packageName: String) {
     val tokenType = StringBuilder()
 
     fun <T> add(value: T) = tokenType.append(value)
 
-    add("enum class MyTokenType {")
+    add("enum class ${packageName}TokenType {")
     add(System.lineSeparator())
     add("    ")
 
@@ -38,11 +41,10 @@ private fun Grammar.generateMyTokens(path: String) {
     add(System.lineSeparator())
     add("}")
 
-    val token = "data class MyToken(val type: MyTokenType, val data: Any? = null)"
+    val token = "data class ${packageName}Token(val type: ${packageName}TokenType, val data: Any? = null)"
 
     ///////////////////////////////
-    val file = Paths.get("$path/MyToken.kt")
-
+    val file = Paths.get("$path/$packageName/${packageName}Token.kt")
     Files.write(file, tokenType.toString().toByteArray())
     newLine(file)
     newLine(file)
@@ -51,16 +53,16 @@ private fun Grammar.generateMyTokens(path: String) {
 }
 
 @Early
-private fun Grammar.generateLexer(path: String) {
+private fun Grammar.generateLexer(path: String, packageName: String) {
     val lexer = StringBuilder()
 
     fun <T> add(value: T) = lexer.append(value)
 
     add(
         """
-       |import MyTokenType.*
+       |import ${packageName}TokenType.*
        |
-       |fun getMyTokens(string: String): List<MyToken> {
+       |fun get${packageName}Tokens(string: String): List<${packageName}Token> {
        |    var current = 0
        |    
        |    fun get() = string[current]
@@ -78,7 +80,7 @@ private fun Grammar.generateLexer(path: String) {
        |        return match != null && match.range.first == current
        |    }
        |        
-       |    val tokens = mutableListOf<MyToken>()
+       |    val tokens = mutableListOf<${packageName}Token>()
        |    while (current < string.length) {
        |        while (get().isWhitespace()) shift(1) //TODO: remove!!
        |
@@ -98,22 +100,22 @@ private fun Grammar.generateLexer(path: String) {
        |        }
        |        
        |        shift()
-       |        tokens += MyToken(tokenType, data)
+       |        tokens += ${packageName}Token(tokenType, data)
        |    }
        |    
-       |    return tokens + MyToken(EOF)
+       |    return tokens + ${packageName}Token(EOF)
        |}
        |
         """.trimMargin()
     )
 
     ///////////////////////////////
-    val file = Paths.get("$path/Lexer.kt")
+    val file = Paths.get("$path/$packageName/${packageName}Lexer.kt")
     Files.write(file, lexer.toString().toByteArray())
 }
 
 @Early
-private fun Grammar.generateClasses(path: String) {
+private fun Grammar.generateClasses(path: String, packageName: String) {
     val tree =
         """
         |abstract class Tree {
@@ -139,7 +141,7 @@ private fun Grammar.generateClasses(path: String) {
     classes += "data class Terminal(val data: Any?) : Tree()"
 
     ///////////////////////////////
-    val file = Paths.get("$path/Classes.kt")
+    val file = Paths.get("$path/$packageName/${packageName}Classes.kt")
     Files.write(file, tree.toByteArray())
     newLine(file)
     newLine(file)
@@ -151,7 +153,7 @@ private fun Grammar.generateClasses(path: String) {
 }
 
 @Early
-private fun Grammar.generateParser(path: String) {
+private fun Grammar.generateParser(path: String, packageName: String) {
     val FIRST1 = getFIRST1()
 
     val parser = StringBuilder()
@@ -162,15 +164,15 @@ private fun Grammar.generateParser(path: String) {
 
     addln(
         """
-        |import MyTokenType.*
+        |import ${packageName}TokenType.*
         |
-        |class MyParser(private val tokens: List<MyToken>) { //TODO: rename
+        |class ${packageName}Parser(private val tokens: List<${packageName}Token>) { //TODO: rename
         |    private var current = 0
         |
         |    fun get() = tokens[current]
         |    fun getType() = get().type
         |
-        |fun currentIn(vararg tokens: MyTokenType) = getType() in tokens
+        |    fun currentIn(vararg tokens: ${packageName}TokenType) = getType() in tokens
         | 
         """.trimMargin()
     )
@@ -178,6 +180,15 @@ private fun Grammar.generateParser(path: String) {
     val graph = rules //graph[x] = y === go from `x` by rules `y`
         .filter { !it.left.startsWith("code_") }
         .groupBy { it.left }
+
+    addln(
+        """
+       |    fun parse(): Tree {
+       |         return parse${cap(graph.keys.first { !it.startsWith("generated_") }) }()
+       |    }
+       |
+        """.trimMargin()
+    )
 
     graph
         .filter { !it.key.startsWith("generated_") }
@@ -195,7 +206,7 @@ private fun Grammar.generateParser(path: String) {
     addln("}")
 
     ///////////////////////////////
-    val file = Paths.get("$path/Parser.kt")
+    val file = Paths.get("$path/$packageName/${packageName}Parser.kt")
     Files.write(file, parser.toString().toByteArray())
     newLine(file)
 }
@@ -236,7 +247,7 @@ private fun Grammar.generateFunction(
     addln(
         """
            |fun parse$name($args): $returnType {
-           |    ${ if (parent == "") "val $left = $name()" else "" }
+           |    ${if (parent == "") "val $left = $name()" else ""}
            |    val children = mutableListOf<Tree>()
            |
            |    when {
@@ -268,7 +279,7 @@ private fun Grammar.generateFunction(
                 it != "_" -> {
                     if (it !in terminals) {
                         val functionName = cap(it)
-                        var functionArgs =  if (it.startsWith("generated_")) parent else ""
+                        var functionArgs = if (it.startsWith("generated_")) parent else ""
 
                         if (it in inherited.keys) {
                             if (functionArgs.isNotEmpty()) functionArgs += ", "

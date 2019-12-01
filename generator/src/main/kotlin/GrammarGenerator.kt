@@ -30,7 +30,7 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
         visit(ctx.attributes())
         currentRight.add(visit(ctx.codeblock()))
 
-        val right = ctx.rule1()
+        val right = ctx.description()
         visit(right)
 
         rules += Rule(currentLeft, currentRight, calls)
@@ -79,7 +79,7 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
     }
 
     @Early
-    override fun visitRule1(ctx: GrammarParser.Rule1Context?): String? {
+    override fun visitDescription(ctx: GrammarParser.DescriptionContext?): String? {
         require(ctx != null)
 
         if (ctx.childCount > 1) { //exists OR
@@ -97,7 +97,7 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
 
             return left
         } else {
-            return super.visitRule1(ctx)
+            return super.visitDescription(ctx)
         }
     }
 
@@ -176,8 +176,8 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
     override fun visitRuleIdWithPass(ctx: GrammarParser.RuleIdWithPassContext?): String {
         require(ctx != null)
 
-        if (ctx.pass() != null) {
-            calls.add(ctx.pass().text.drop(1).dropLast(1))
+        if (ctx.PASS() != null) {
+            calls.add(ctx.PASS().text.drop(2).dropLast(2))
         }
 
         return visit(ctx.RULE_ID())

@@ -1,0 +1,30 @@
+file : statement*;
+
+statement : (call | ioStatement) SEMICOLON;
+
+ioStatement : print | println;
+
+print : PRINT \{ print("print ") \} call;
+println : PRINTLN \{ print("println") \} call;
+
+call : ID \{ print("call<${ID.data}>") \} LP arguments RP;
+
+arguments :
+    \{ print("with args: ") \} arg (COMMA \{ print(", ") \} arg)* \{ print("end of args") \}
+    |
+    _
+    ;
+
+arg : call | READ \{ print("read") \};
+
+READ : 'read\\b';
+PRINT : 'print\\b';
+PRINTLN : 'println\\b';
+
+ID : '[\\w]+\\b';
+
+LP : '\\(';
+RP : '\\)';
+
+COMMA : ',';
+SEMICOLON : ';';

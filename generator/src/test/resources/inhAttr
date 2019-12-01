@@ -1,0 +1,11 @@
+decl : ARRAY LB NODE RB array\[Integer.parseInt(NODE.data as String)\];
+
+array[size: Int] : NODE \{ println(NODE.data) \} array1\[size - 1\];
+array[size: Int] : _ \{ require(size == 0) \};
+
+array1[size: Int] : array\[size\];
+
+NODE : '[0-9][0-9]*';
+LB : '\\(';
+RB : '\\)';
+ARRAY : 'array\\b';

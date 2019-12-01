@@ -11,13 +11,11 @@ file :
     ;
 
 rule_decl :
-    RULE_ID attributes COLON codeblock rule1 SEMICOLON //TODO: rename `rule1`
+    RULE_ID attributes COLON codeblock description SEMICOLON
     ;
 
 attributes :
-    //[inherited]? (returns [synthesized])?
     inherited synthesized
-//    ('returns' '[' declaration (',' declaration)* ']')?
     ;
 
 inherited :
@@ -32,7 +30,7 @@ declaration :
     RULE_ID COLON TYPE
     ;
 
-rule1 :
+description :
     and (OR and)*
     ;
 
@@ -43,25 +41,20 @@ and :
 factor :
     (ruleIdWithPass | TOKEN_ID) (PLUS | STAR | QUESTION)?
     |
-    LB rule1 RB (PLUS | STAR | QUESTION)?
+    LB description RB (PLUS | STAR | QUESTION)?
     |
     EPSILON
     ;
 
 ruleIdWithPass :
-    RULE_ID pass?
+    RULE_ID PASS?
     ;
 
 token_decl :
-    TOKEN_ID COLON REGEX SEMICOLON //TODO: support rules like `DOUBLE : NUMBER DOT NUMBER`
+    TOKEN_ID COLON REGEX SEMICOLON
     ;
 
 codeblock : CODE_BLOCK*;
-
-pass :
-    '[' .*? ']'
-    ;
-
 
 REGEX : '\'' (~('\'' | '\n' | '\\') | '\\\\' | '\\\'' | '\\.')+ '\'';
 
@@ -82,6 +75,7 @@ LB : '(';
 RB : ')';
 
 CODE_BLOCK : '\\{' .*? '\\}';
+PASS : '\\[' .*? '\\]';
 
 EPSILON : '_';
 
