@@ -131,7 +131,15 @@ private fun Grammar.generateClasses(path: String, packageName: String) {
             val header = "class ${cap(it)} : Tree()"
 
             var body = " {\n"
-            synthesized[it]?.forEach { attr -> body += "    $attr\n" } //TODO: default value
+            synthesized[it]?.forEach { attr ->
+                body += "    "
+                body += when (attr.split(":")[1]) {
+                    "Boolean" -> "var $attr = false"
+                    "Int" -> "var $attr = 0" //TODO: support other primitives
+                    else -> "lateinit var $attr"
+                }
+                body += System.lineSeparator()
+            }
             body += "}\n"
             if (body == " {\n}\n") body = ""
 
@@ -169,10 +177,14 @@ private fun Grammar.generateParser(path: String, packageName: String) {
         |class ${packageName}Parser(private val tokens: List<${packageName}Token>) { //TODO: rename
         |    private var current = 0
         |
-        |    fun get() = tokens[current]
-        |    fun getType() = get().type
+        |    private fun get() = tokens[current]
+        |    private fun getType() = get().type
         |
-        |    fun currentIn(vararg tokens: ${packageName}TokenType) = getType() in tokens
+        |    private fun expected(token: ${packageName}TokenType) {
+        |        require(token == getType()) { "Expected ${'$'}token, but was ${'$'}{getType()}"}
+        |    }
+        |
+        |   private fun currentIn(vararg tokens: ${packageName}TokenType) = getType() in tokens
         | 
         """.trimMargin()
     )
@@ -236,7 +248,7 @@ private fun Grammar.generateFunction(
         args = "$parent: ${cap(parent)}"
     } else {
         returnType = name
-        args = "" //TODO: put inherited attributes
+        args = ""
     }
 
     inherited[if (parent == "") left else parent]?.forEach {
@@ -289,6 +301,7 @@ private fun Grammar.generateFunction(
                         addln("val $it = parse$functionName($functionArgs)")
                         addln("children += $it")
                     } else {
+                        addln("expected($it)")
                         addln("val $it = parseTerminal()")
                         addln("children += $it")
                     }

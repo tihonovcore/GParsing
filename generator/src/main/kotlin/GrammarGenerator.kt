@@ -58,7 +58,7 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
 
         val declarations = mutableListOf<String>()
         for (i in 2 until ctx.childCount - 1 step 2) {
-            declarations += "var " + ctx.children[i].text
+            declarations += ctx.children[i].text
         }
         synthesized[currentLeft] = declarations
 

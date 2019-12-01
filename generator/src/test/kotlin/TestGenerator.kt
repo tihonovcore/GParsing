@@ -236,8 +236,8 @@ class TestCodeBlocks : TestGenerator() {
     @Test
     fun test0() {
         /*
-        TODO: out wrong: there is "wih args..." for call with no args
-        probably problem with eps-rules
+        TODO: out wrong: there is "with args..." for call with no args
+        first code block adds in wrong place
          */
         doTest("plus(plus());")
     }
@@ -250,8 +250,8 @@ class TestCodeBlocks : TestGenerator() {
     @Test
     fun test2() {
         /*
-        TODO: out wrong: there is "wih args..." for call with no args
-        probably problem with eps-rules
+        TODO: out wrong: there is "with args..." for call with no args
+        first code block adds in wrong place
          */
         doTest("println eval(read, fact(id()), add(read, read));")
     }
