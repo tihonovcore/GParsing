@@ -118,8 +118,7 @@ class TestFunctionDeclaration : TestGenerator() {
         assert(false)
     }
 
-    //TODO: remove. using for generated parser
-    object Render {
+    private object Render {
         fun visit(visit: Tree) {
             if (visit is Terminal) print("${visit.data} ")
             else visit.children.forEach { visit(it) }

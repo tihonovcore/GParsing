@@ -4,20 +4,69 @@ import org.antlr.v4.runtime.tree.TerminalNode
 import org.tihonovcore.grammar.Rule
 import org.tihonovcore.utils.Early
 
+/**
+ * Visitor for getting information about [nonterminals], [terminals],
+ * [rules], [lexerRules], nonterminals for code - [codeBlocks],
+ * attributes - [synthesized] and [inherited]
+ */
 @Early
 class GrammarGenerator : GrammarBaseVisitor<String>() {
+    /**
+     * [Set] of nonterminals' names
+     * [GrammarGenerator] creates additional nonterminals for rules with `*`,
+     * `?` or `+`, which names starts with `generated_`, and nonterminals for
+     * blocks of code: `code_`
+     */
     val nonterminals = mutableSetOf<String>()
+
+    /**
+     * Set of terminals' names
+     */
     val terminals = mutableSetOf<String>()
 
+    /**
+     * List of parser rules
+     */
     val rules = mutableListOf<Rule>()
+
+    /**
+     * List of lexer rules <regex, tokenName>
+     */
     val lexerRules = mutableListOf<Pair<String, String>>()
+
+    /**
+     * Maps code nonterminal (their names start with `code_`) to block of code
+     */
     val codeBlocks = mutableMapOf<String, String>()
+
+    /**
+     * Maps nonterminal name to list of his synthesized attributes
+     */
     val synthesized: MutableMap<String, MutableList<String>> = mutableMapOf()
+
+    /**
+     * Maps nonterminal name to list of his inherited attributes
+     * Format: <name : type>
+     */
     val inherited: MutableMap<String, MutableList<Pair<String, String>>> = mutableMapOf()
 
+
+    /**
+     * Left side of current rule
+     */
     private var currentLeft: String = ""
+
+    /**
+     * Right side of current rule
+     */
     private var currentRight = mutableListOf<String>()
-    var calls: MutableList<String> = mutableListOf()
+
+    /**
+     * List of arguments that passes to nonterminals with inherited attributes
+     */
+    private var calls: MutableList<String> = mutableListOf()
+
+    private var underStarPlusQuestion = false
 
     @Early
     override fun visitRule_decl(ctx: GrammarParser.Rule_declContext?): String? {
@@ -100,8 +149,6 @@ class GrammarGenerator : GrammarBaseVisitor<String>() {
             return super.visitDescription(ctx)
         }
     }
-
-    private var underStarPlusQuestion = false
 
     @Early
     override fun visitAnd(ctx: GrammarParser.AndContext?): String? {

@@ -8,6 +8,11 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 
+/**
+ * Creates files with lexer, tokens, parsers and classes
+ *
+ * [packageName] - prefix for lexer and parser name
+ */
 @Early
 fun generateFiles(
     grammar: Grammar,
@@ -165,27 +170,24 @@ private fun Grammar.generateParser(path: String, packageName: String) {
     val FIRST1 = getFIRST1()
 
     val parser = StringBuilder()
-    val indent = StringBuilder()
-
-    fun <T> addln(value: T) = parser.append(value).append(System.lineSeparator()).append(indent)
-    fun addln() = addln("")
+    fun <T> addln(value: T) = parser.append(value).append(System.lineSeparator())
 
     addln(
         """
         |import ${packageName}TokenType.*
         |
-        |class ${packageName}Parser(private val tokens: List<${packageName}Token>) { //TODO: rename
+        |class ${packageName}Parser(private val tokens: List<${packageName}Token>) {
         |    private var current = 0
         |
         |    private fun get() = tokens[current]
         |    private fun getType() = get().type
         |
         |    private fun expected(token: ${packageName}TokenType) {
-        |        require(token == getType()) { "Expected ${'$'}token, but was ${'$'}{getType()}"}
+        |        require(token == getType()) { "Expected ${'$'}token, but was ${'$'}{getType()}" }
         |    }
         |
-        |   private fun currentIn(vararg tokens: ${packageName}TokenType) = getType() in tokens
-        | 
+        |    private fun currentIn(vararg tokens: ${packageName}TokenType) = getType() in tokens
+        |
         """.trimMargin()
     )
 
@@ -196,7 +198,7 @@ private fun Grammar.generateParser(path: String, packageName: String) {
     addln(
         """
        |    fun parse(): Tree {
-       |         return parse${cap(graph.keys.first { !it.startsWith("generated_") }) }()
+       |        return parse${cap(graph.keys.first { !it.startsWith("generated_") }) }()
        |    }
        |
         """.trimMargin()
@@ -209,9 +211,9 @@ private fun Grammar.generateParser(path: String, packageName: String) {
 
     addln(
         """
-        |   fun parseTerminal(): Terminal {
-        |       return Terminal(get().data).also { current++ }
-        |   }
+        |    fun parseTerminal(): Terminal {
+        |        return Terminal(get().data).also { current++ }
+        |    }
         """.trimMargin()
     )
 
@@ -223,10 +225,8 @@ private fun Grammar.generateParser(path: String, packageName: String) {
     newLine(file)
 }
 
-//TODO: clear set
 private val visited = mutableSetOf<String>()
 
-//TODO: set indent
 private fun Grammar.generateFunction(
     graph: Map<String, List<Rule>>,
     FIRST1: Map<Rule, List<String>>,
@@ -258,23 +258,26 @@ private fun Grammar.generateFunction(
 
     addln(
         """
-           |fun parse$name($args): $returnType {
-           |    ${if (parent == "") "val $left = $name()" else ""}
-           |    val children = mutableListOf<Tree>()
+           |    fun parse$name($args): $returnType {
+           |        ${if (parent == "") "val $left = $name()" else ""}
+           |        val children = mutableListOf<Tree>()
            |
-           |    when {
+           |        when {
             """.trimMargin()
     )
 
-    var epsilonRuleExists = false
     val addLater = mutableListOf<String>()
     graph[left]!!.forEach { rule ->
         val tokens = convertToCode(FIRST1[rule]!!)
-        addln("currentIn($tokens) -> {")
+        addln("            currentIn($tokens) -> {")
 
         rule.right.forEach {
             when {
-                it.startsWith("code_") -> addln("   " + codeBlocks[it])
+                it.startsWith("code_") -> {
+                    if (!codeBlocks[it].isNullOrEmpty()) {
+                        addln("   " + codeBlocks[it])
+                    }
+                }
                 it.startsWith("generated_") -> {
                     //NOTE: if we are `generated_` we have parent yet
                     var nextParent = if (left.startsWith("generated_")) parent else left
@@ -282,11 +285,11 @@ private fun Grammar.generateFunction(
                         addLater += generateFunction(graph, FIRST1, it, nextParent)
                     }
 
-                    inherited[nextParent]?.forEach {
-                        nextParent += ", ${it.first}"
+                    inherited[nextParent]?.forEach { attr ->
+                        nextParent += ", ${attr.first}"
                     }
 
-                    addln("children += parse${cap(it)}($nextParent)")
+                    addln("                children += parse${cap(it)}($nextParent)")
                 }
                 it != "_" -> {
                     if (it !in terminals) {
@@ -295,38 +298,45 @@ private fun Grammar.generateFunction(
 
                         if (it in inherited.keys) {
                             if (functionArgs.isNotEmpty()) functionArgs += ", "
-                            functionArgs += rule.calls.first()
+                            functionArgs += rule.calls.first() //TODO: remove first after using
                         }
 
-                        addln("val $it = parse$functionName($functionArgs)")
-                        addln("children += $it")
+                        addln(
+                            """
+                           |                val $it = parse$functionName($functionArgs)
+                           |                children += $it
+                            """.trimMargin()
+                        )
                     } else {
-                        addln("expected($it)")
-                        addln("val $it = parseTerminal()")
-                        addln("children += $it")
+                        addln(
+                            """
+                           |                expected($it)
+                           |                val $it = parseTerminal()
+                           |                children += $it
+                            """.trimMargin()
+                        )
                     }
                 }
-                else -> epsilonRuleExists = true
             }
         }
 
-        addln("}")
+        addln("            }")
     }
 
-    if (epsilonRuleExists)
-        addln("else -> { /* do nothing */ }")
-    else
-        addln("else -> throw IllegalStateException()")
+    val returnValue =
+        if (left.startsWith("generated_")) "children"
+        else "$left.also { it.children += children }"
 
-    addln("}")
-
-    if (left.startsWith("generated_"))
-        addln("    return children")
-    else
-        addln("    return $left.also { it.children += children }")
-
-    addln("}")
-    addln("")
+    addln(
+        """
+       |            else -> throw IllegalStateException("Unexpected token: ${'$'}{getType()}")
+       |        }
+       |
+       |        return $returnValue
+       |    }
+       |
+        """.trimMargin()
+    )
 
     addLater.forEach { result.append(it) }
     return result.toString()

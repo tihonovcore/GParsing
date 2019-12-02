@@ -1,35 +1,13 @@
-file :
-    ruledecl* tokendecl*
-    ;
+start : a f;
 
-ruledecl :
-    RULEID COLON rule SEMICOLON
-    ;
+a : b | c | _;
 
-rule : and (OR and)*;
+f : HELLO | _;
 
-and :
-    factor+;
+b : BBB;
+c : CCC;
 
-factor :
-    (RULEID | TOKENID) (PLUS | STAR)?
-    |
-    LB rule RB
-    ;
+BBB : 'bbb';
+CCC : 'ccc';
 
-tokendecl :
-    TOKENID COLON QUOTE regex QUOTE SEMICOLON
-    ;
-
-COLON : ':';
-QUOTE : '\'';
-SEMICOLON : ';';
-
-STAR : '*';
-PLUS : '+';
-OR : '|';
-LB : '(';
-RB : ')';
-
-RULEID : '[a-z][A-Za-z0-9]*';
-TOKENID : '[A-Z]*';
+HELLO : 'hello';s
