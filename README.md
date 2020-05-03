@@ -1,7 +1,7 @@
-## MT course homework
+## Translation Method course's homework
 
 #### Utilities for grammars
-@Early [org.tihonovcore.grammar](https://github.com/tihonovcore/GParsing/tree/master/grammar/src/main)
+[org.tihonovcore.grammar](https://github.com/tihonovcore/GParsing/tree/master/grammar/src/main)
 
 #### Parser for function definition in Pascal
 [Source code](https://github.com/tihonovcore/GParsing/tree/master/pascalParser/src/main)
